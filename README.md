@@ -1,60 +1,77 @@
 # Tokenizador & Traductor Contextual de Prompts
 
-Plataforma modular construida con **Vite**, **JavaScript vainilla** y **js-tiktoken** para el análisis de eficiencia de prompts, traducción contextual y conteo preciso de tokens sin necesidad de APIs de pago ni servidores complejos.
+Plataforma modular con **Frontend Vite + JavaScript vanilla** y un **Backend FastAPI** opcional. Sirve para analizar prompts, calcular tokens con precisión, traducir con contexto y comparar eficiencia entre idiomas/modelos.
 
----
+## Qué Usa Cada Parte
 
-## Características Principales
+1. **Frontend**: UI, análisis visual, tokenización local con `js-tiktoken`, heurísticas de calidad y fallback de traducción.
+2. **Backend**: API `FastAPI` para centralizar traducción y análisis cuando está activo.
+3. **Regla de funcionamiento**: el frontend intenta usar el backend primero; si no responde, cae a fallback local.
 
-1. **Traducción Contextual Sin APIs de Pago**: Traducción inteligente y contextual entre español (u otros idiomas) e inglés utilizando servicios públicos sin claves de API.
-2. **Conteo Preciso de Tokens (`js-tiktoken`)**: Cálculo exacto de tokens utilizados en el idioma de entrada frente al idioma traducido (inglés) utilizando el tokenizador oficial de OpenAI.
-3. **Análisis de Eficiencia**: Comparativa automática que determina cuál idioma es más eficiente y por qué (menor consumo de tokens).
-4. **Landing Page Interactiva**: Interfaz moderna, elegante y modular.
-
----
-
-## Estructura del Proyecto
+## Estructura
 
 ```text
 Tokenizador/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   └── services/
+│   │       ├── tokenizer.py
+│   │       └── translator.py
+│   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   └── main.js          # Lógica principal, tokenización y traducción
-│   ├── index.html           # Landing page interactiva
-│   ├── package.json         # Dependencias (Vite, js-tiktoken)
-│   └── vite.config.js       # Configuración de Vite
-└── README.md                # Documentación del proyecto
+│   │   ├── main.js
+│   │   └── style.css
+│   ├── index.html
+│   ├── package.json
+│   └── postcss.config.js
+└── README.md
 ```
 
----
-
-## Requisitos Previos
+## Requisitos
 
 - **Node.js 18+** y npm
+- **Python 3.12+**
+- Paquete del sistema para venv en Debian/Ubuntu: `python3.12-venv`
 
----
+## Arranque Recomendado
 
-## Instrucciones para Levantar el Proyecto
+### 1. Backend
 
-1. Entrar en la carpeta del frontend:
-   ```bash
-   cd frontend
-   ```
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-2. Instalar las dependencias:
-   ```bash
-   npm install
-   ```
+### 2. Frontend
 
-3. Iniciar el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
+En otra terminal:
 
-El proyecto se abrirá en tu navegador (por defecto en `http://localhost:5173`). Podrás introducir cualquier prompt en español u otro idioma, ver su traducción contextual en inglés, el conteo exacto de tokens de ambos lados, y la recomendación de eficiencia en tiempo real.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
----
+## Cómo Funciona
+
+- Si el backend está levantado, el frontend llama a `POST /api/analyze`.
+- Ese endpoint traduce el prompt y calcula tokens/recomendación centralizada.
+- Si el backend no está disponible, el frontend usa su fallback local:
+  - traducción por chunks con MyMemory
+  - conteo local con `js-tiktoken`
+  - análisis heurístico de calidad
+
+## Notas
+
+- La comparación de modelos es estimada y local.
+- Los tokens no dependen del modelo comercial, sino del encoding seleccionado.
+- El proyecto no requiere APIs de pago para funcionar.
 
 ## Licencia
 
-Proyecto desarrollado bajo arquitectura modular y open-source.
+Open-source.

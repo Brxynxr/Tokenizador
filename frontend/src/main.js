@@ -554,24 +554,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // Try backend first so translation/token analysis stays centralized when the API is available.
-      const backendResponse = await fetch(`${BACKEND_URL}/api/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: cleanedText,
-          source_lang: sourceLang,
-          target_lang: targetLang,
-          model_name: modelSelect.value
-        })
-      });
+      try {
+        const backendResponse = await fetch(`${BACKEND_URL}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: cleanedText,
+            source_lang: sourceLang,
+            target_lang: targetLang,
+            model_name: modelSelect.value
+          })
+        });
 
-      if (backendResponse.ok) {
-        const backendData = await backendResponse.json();
-        if (backendData?.translated_text) {
-          translatedTextOutput.value = backendData.translated_text.trim();
-          updateStats(translatedTextOutput.value, false);
-          return;
+        if (backendResponse.ok) {
+          const backendData = await backendResponse.json();
+          if (backendData?.translated_text) {
+            translatedTextOutput.value = backendData.translated_text.trim();
+            updateStats(translatedTextOutput.value, false);
+            return;
+          }
         }
+      } catch (backendError) {
+        console.warn('Backend unavailable, using local translation fallback:', backendError);
       }
 
       // 2. Split the prompt preserving paragraphs and sentence boundaries
