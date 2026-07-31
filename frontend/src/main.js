@@ -10,9 +10,7 @@ const MODELS = [
     color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
     inputCostPer1M: 2.50,
     outputCostPer1M: 10.00,
-    contextWindow: "128K",
-    strength: "Equilibrio ideal entre razonamiento, velocidad y multimodalidad para uso general.",
-    weakness: "Costo medio-alto; puede saturarse en horas pico."
+    contextWindow: "128K"
   },
   {
     id: "gpt-4o-mini",
@@ -22,9 +20,7 @@ const MODELS = [
     color: "bg-teal-500/20 text-teal-400 border-teal-500/30",
     inputCostPer1M: 0.15,
     outputCostPer1M: 0.60,
-    contextWindow: "128K",
-    strength: "Costo muy bajo y baja latencia para tareas masivas y simples.",
-    weakness: "Razonamiento profundo y seguimiento de instrucciones complejas limitados."
+    contextWindow: "128K"
   },
   {
     id: "claude-3-5",
@@ -34,9 +30,7 @@ const MODELS = [
     color: "bg-amber-500/20 text-amber-400 border-amber-500/30",
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
-    contextWindow: "200K",
-    strength: "Excelente calidad en código y redacción; contexto amplio de 200K.",
-    weakness: "Precio alto; mayor latencia en cargas elevadas."
+    contextWindow: "200K"
   },
   {
     id: "claude-3-5-haiku",
@@ -46,9 +40,7 @@ const MODELS = [
     color: "bg-pink-500/20 text-pink-400 border-pink-500/30",
     inputCostPer1M: 0.80,
     outputCostPer1M: 4.00,
-    contextWindow: "200K",
-    strength: "Rápido y económico; ideal para clasificación, extracción y resúmenes.",
-    weakness: "Alcance limitado en tareas analíticas complejas."
+    contextWindow: "200K"
   },
   {
     id: "gemini-1-5-pro",
@@ -58,9 +50,7 @@ const MODELS = [
     color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     inputCostPer1M: 1.25,
     outputCostPer1M: 5.00,
-    contextWindow: "2M",
-    strength: "Ventana de contexto líder de 2M tokens y capacidades multimodales.",
-    weakness: "Razonamiento multi-paso variable; costo intermedio."
+    contextWindow: "2M"
   },
   {
     id: "llama-3-1",
@@ -70,9 +60,7 @@ const MODELS = [
     color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
     inputCostPer1M: 0.70,
     outputCostPer1M: 0.90,
-    contextWindow: "128K",
-    strength: "Open source con costo bajo; ideal para despliegue local o privado.",
-    weakness: "Requiere infraestructura propia para un rendimiento serio."
+    contextWindow: "128K"
   },
   {
     id: "mistral-large",
@@ -82,9 +70,7 @@ const MODELS = [
     color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
     inputCostPer1M: 2.00,
     outputCostPer1M: 6.00,
-    contextWindow: "128K",
-    strength: "Fuerte multilingüismo y eficiencia europea; buen equilibrio de capacidades.",
-    weakness: "Ecosistema de herramientas y comunidad menor que los líderes."
+    contextWindow: "128K"
   },
   {
     id: "deepseek-v3",
@@ -94,9 +80,7 @@ const MODELS = [
     color: "bg-violet-500/20 text-violet-400 border-violet-500/30",
     inputCostPer1M: 0.14,
     outputCostPer1M: 0.28,
-    contextWindow: "64K",
-    strength: "Costo ultrabajo (0.14/0.28 por millón) con calidad general sorprendente.",
-    weakness: "Ventana de contexto de 64K; ecosistema y soporte aún en maduración."
+    contextWindow: "64K"
   }
 ];
 
@@ -141,14 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelsToggleBtn = document.getElementById('modelsToggleBtn');
   const modelsChevron = document.getElementById('modelsChevron');
   const modelsCollapsible = document.getElementById('modelsCollapsible');
-  const modelAnalysisContainer = document.getElementById('modelAnalysisContainer');
 
   let isModelsOpen = false;
   let debounceTimer = null;
 
-  // Initial render of model cards and analysis
+  // Initial render of model cards
   renderModelComparisonCards();
-  renderModelAnalysis();
 
   // Orthography & Spelling Cleanup utility function
   function cleanOrthography(text) {
@@ -415,29 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     }).join('');
-  }
-
-  // Render Recommendations, Improvements and Weaknesses per model
-  function renderModelAnalysis() {
-    modelAnalysisContainer.innerHTML = MODELS.map(m => `
-      <div class="py-3 border-b border-slate-800/60 last:border-0">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="w-6 h-6 rounded-lg ${m.color} border flex items-center justify-center font-bold text-[10px]">${m.initial}</div>
-          <span class="font-bold text-sm text-white">${m.name}</span>
-          <span class="text-[11px] text-slate-400">${m.company}</span>
-        </div>
-        <div class="grid md:grid-cols-2 gap-2.5 text-xs">
-          <div class="flex items-start gap-2">
-            <span class="shrink-0 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px] font-bold uppercase">Recomendación</span>
-            <span class="text-slate-300">${m.strength}</span>
-          </div>
-          <div class="flex items-start gap-2">
-            <span class="shrink-0 px-1.5 py-0.5 rounded bg-red-500/15 text-red-300 text-[10px] font-bold uppercase">Falencias</span>
-            <span class="text-slate-300">${m.weakness}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
   }
 
   // Robust Contextual translation flow
