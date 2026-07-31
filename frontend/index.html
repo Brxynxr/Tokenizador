@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tokenizador y traductor contextual de prompts: cuenta tokens, traduce con contexto y compara costos entre LLMs sin APIs de pago." />
   <title>Tokenizador & Traductor Contextual de Prompts</title>
   <style>
     :root {
-      --neon-cyan: #00f0ff;
-      --neon-fuchsia: #ff2fd6;
-      --neon-violet: #8b5cf6;
       --bg-deep: #05060f;
     }
     body {
@@ -100,19 +98,24 @@
     .custom-textarea::placeholder {
       color: #5b6478;
     }
-    .neon-ring {
-      background: var(--bg-deep);
-      position: relative;
-      border-radius: 9999px;
+    .custom-textarea {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 240, 255, 0.7) rgba(8, 10, 22, 0.95);
     }
-    .neon-ring::before {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 9999px;
-      background: linear-gradient(135deg, #22d3ee, #a855f7);
-      z-index: -1;
-      box-shadow: 0 0 20px rgba(168,85,247,0.4), 0 0 20px rgba(34,211,238,0.3);
+    .custom-textarea::-webkit-scrollbar {
+      width: 10px;
+    }
+    .custom-textarea::-webkit-scrollbar-track {
+      background: rgba(8, 10, 22, 0.95);
+      border-radius: 999px;
+    }
+    .custom-textarea::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.85), rgba(255, 47, 214, 0.8));
+      border-radius: 999px;
+      border: 2px solid rgba(8, 10, 22, 0.95);
+    }
+    .custom-textarea::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(0, 240, 255, 1), rgba(255, 47, 214, 0.95));
     }
     .btn-icon-only {
       width: 44px;
@@ -290,28 +293,28 @@
 
         <div class="w-full flex flex-col items-center gap-2.5">
           <!-- Botón Optimizar Prompt (Icon Only) -->
-          <button id="optimizeBtn" title="Optimizar Prompt" class="btn-icon-only btn-optimize shadow-lg text-white">
+          <button id="optimizeBtn" title="Optimizar Prompt" aria-label="Optimizar prompt" class="btn-icon-only btn-optimize shadow-lg text-white">
             <svg class="w-5 h-5 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
             </svg>
           </button>
 
           <!-- Botón Traducir (Icon Only) -->
-          <button id="translateBtn" title="Traducir" class="btn-icon-only btn-translate shadow-lg text-white">
+          <button id="translateBtn" title="Traducir" aria-label="Traducir prompt" class="btn-icon-only btn-translate shadow-lg text-white">
             <svg class="w-5 h-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
             </svg>
           </button>
 
           <!-- Botón Copiar (Icon Only) -->
-          <button id="copyBtn" title="Copiar" class="btn-icon-only btn-secondary text-slate-300">
+          <button id="copyBtn" title="Copiar" aria-label="Copiar texto traducido" class="btn-icon-only btn-secondary text-slate-300">
             <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
             </svg>
           </button>
 
           <!-- Botón Limpiar (Icon Only) -->
-          <button id="clearBtn" title="Limpiar" class="btn-icon-only btn-danger">
+          <button id="clearBtn" title="Limpiar" aria-label="Limpiar campos" class="btn-icon-only btn-danger">
             <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
             </svg>
@@ -346,6 +349,8 @@
               rows="6" 
               class="custom-textarea w-full p-4 text-sm leading-relaxed placeholder-slate-500"
               placeholder="La traducción aparecerá aquí..."
+              aria-label="Prompt traducido"
+              aria-live="polite"
             ></textarea>
           </div>
         </div>
@@ -377,6 +382,170 @@
 
     </div>
 
+    <!-- PANEL: Resultado de Optimización del Prompt -->
+    <section id="optimizedPromptCard" class="custom-card p-6 mt-8 max-w-[1200px] mx-auto hidden transition-all duration-500">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800/80">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 via-fuchsia-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-fuchsia-500/30 animate-pulse">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 class="font-bold text-base text-white flex items-center gap-2">
+              Prompt Optimizado con Éxito
+              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30 uppercase tracking-wider">IA Avanzada</span>
+            </h2>
+            <p class="text-xs text-slate-400">Versión mejorada dinámicamente con asignación de rol, formato y control de precisión</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 self-end sm:self-auto">
+          <button id="copyOptimizedBtn" title="Copiar Prompt Optimizado" aria-label="Copiar prompt optimizado" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-all cursor-pointer">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+            </svg>
+            <span>Copiar Optimizado</span>
+          </button>
+
+          <div class="relative">
+            <button id="optimizeScopeBtn" title="Seguir optimizando" aria-label="Seguir optimizando prompt" class="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white hover:brightness-110 transition-all shadow-md shadow-cyan-500/20 cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span>Seguir optimizando</span>
+            </button>
+            <div id="optimizeScopeMenu" class="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-700 bg-[#0b0f1d] shadow-2xl shadow-black/40 backdrop-blur-xl hidden z-30 overflow-hidden">
+              <button data-scope="all" class="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-slate-800/80 transition-colors border-b border-slate-800">Optimizar todo</button>
+              <button data-scope="role" class="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-slate-800/80 transition-colors border-b border-slate-800">Solo rol y objetivo</button>
+              <button data-scope="context" class="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-slate-800/80 transition-colors border-b border-slate-800">Solo contexto y detalle</button>
+              <button data-scope="format" class="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-slate-800/80 transition-colors">Solo formato y restricciones</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="bg-[#0d1120] border border-slate-800/80 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-fuchsia-400">Prompt Optimizado</span>
+            <span id="optLanguageBadge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Español</span>
+          </div>
+          <textarea id="optimizedPromptOutput" readonly rows="7" class="custom-textarea w-full p-4 text-sm leading-relaxed text-slate-100 focus:outline-none cursor-text mb-3" aria-label="Texto optimizado"></textarea>
+
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Mejoras Aplicadas:</span>
+            <div id="optimizedImprovementsList" class="flex flex-wrap gap-2 text-xs"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div class="bg-[#0d1120] border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Antes</span>
+                <p class="text-[11px] text-slate-500">Prompt original antes de la optimización</p>
+              </div>
+              <span id="optBeforeLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600">—</span>
+            </div>
+            <div class="flex flex-col items-center justify-center">
+              <div class="relative w-24 h-24 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" stroke="#1e2640" stroke-width="8" fill="none" />
+                  <circle id="optBeforeCircle" cx="50" cy="50" r="40" stroke="url(#optBeforeGradient)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" fill="none" class="transition-all duration-500 ease-out" />
+                  <defs>
+                    <linearGradient id="optBeforeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#f87171" />
+                      <stop offset="100%" stop-color="#fb923c" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span id="optBeforeScore" class="text-xl font-extrabold text-white leading-none">0/100</span>
+                </div>
+              </div>
+              <div id="optBeforeStars" class="mt-2 text-sm leading-none tracking-wide text-slate-500">☆☆☆</div>
+              <p id="optBeforeLabel" class="text-xs font-medium text-slate-400 mt-2 px-2 text-center">Esperando optimización...</p>
+            </div>
+            <div id="optBeforeMetrics" class="space-y-2 text-xs text-slate-300"></div>
+          </div>
+
+          <div class="bg-[#0d1120] border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Después</span>
+                <p class="text-[11px] text-slate-500">Prompt reescrito con contexto y estructura</p>
+              </div>
+              <span id="optAfterLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600">—</span>
+            </div>
+            <div class="flex flex-col items-center justify-center">
+              <div class="relative w-24 h-24 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" stroke="#1e2640" stroke-width="8" fill="none" />
+                  <circle id="optAfterCircle" cx="50" cy="50" r="40" stroke="url(#optAfterGradient)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" fill="none" class="transition-all duration-500 ease-out" />
+                  <defs>
+                    <linearGradient id="optAfterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#22d3ee" />
+                      <stop offset="100%" stop-color="#ff2fd6" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span id="optAfterScore" class="text-xl font-extrabold text-white leading-none">0/100</span>
+                </div>
+              </div>
+              <div id="optAfterStars" class="mt-2 text-sm leading-none tracking-wide text-slate-500">☆☆☆</div>
+              <p id="optAfterLabel" class="text-xs font-medium text-slate-400 mt-2 px-2 text-center">Listo para comparar.</p>
+            </div>
+            <div id="optAfterMetrics" class="space-y-2 text-xs text-slate-300"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
+            <div class="text-[11px] text-slate-400 font-medium mb-1">Consumo de Tokens</div>
+            <div class="flex items-center justify-between text-xs">
+              <div>
+                <span class="text-slate-500 block text-[10px]">Original</span>
+                <span id="optTokensBefore" class="font-bold text-slate-300">0</span>
+              </div>
+              <span class="text-slate-600 font-mono">→</span>
+              <div>
+                <span class="text-slate-500 block text-[10px]">Optimizado</span>
+                <span id="optTokensAfter" class="font-bold text-cyan-300">0</span>
+              </div>
+              <div id="optTokensDiff" class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">+0%</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
+            <div class="text-[11px] text-slate-400 font-medium mb-1">Calidad Global</div>
+            <div class="flex items-center justify-between text-xs">
+              <div>
+                <span class="text-slate-500 block text-[10px]">Original</span>
+                <span id="optQualityBefore" class="font-bold text-slate-300">0/100</span>
+              </div>
+              <span class="text-slate-600 font-mono">→</span>
+              <div>
+                <span class="text-slate-500 block text-[10px]">Optimizado</span>
+                <span id="optQualityAfter" class="font-bold text-emerald-400">0/100</span>
+              </div>
+              <div id="optQualityDiff" class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">+0 pts</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
+            <div class="text-[11px] text-slate-400 font-medium mb-1">Nivel Calibrado</div>
+            <div class="flex items-center justify-between text-xs">
+              <span id="optLevelBefore" class="text-slate-400 font-semibold">Básico ★☆☆</span>
+              <span class="text-slate-600 font-mono">→</span>
+              <span id="optLevelAfter" class="text-emerald-400 font-extrabold">Pro ★★★</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Recommendation Banner (Exact user message) -->
     <div id="recommendationCard" class="max-w-[1200px] mx-auto mt-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur hidden">
       <div class="flex items-center gap-4">
@@ -387,7 +556,7 @@
         </div>
         <div>
           <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Análisis de Eficiencia Óptima</h3>
-          <p id="recommendationText" class="text-sm text-slate-200"></p>
+          <p id="recommendationText" class="text-sm text-slate-200" aria-live="polite"></p>
         </div>
       </div>
     </div>
@@ -425,11 +594,16 @@
               </defs>
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span id="qualityScoreNum" class="text-2xl font-extrabold text-white">0/100</span>
+              <span id="qualityScoreNum" class="text-2xl font-extrabold text-white leading-none">0/100</span>
             </div>
           </div>
 
-          <p id="qualityScoreLabel" class="text-xs font-medium text-slate-400 mt-2 px-2">
+          <div id="qualityLevelRow" class="flex items-center gap-2 justify-center mt-1 mb-1.5">
+            <span id="qualityLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600">—</span>
+            <span id="qualityStars" class="text-sm leading-none tracking-wide text-slate-600">☆☆☆</span>
+          </div>
+
+          <p id="qualityScoreLabel" class="text-xs font-medium text-slate-400 mt-0.5 px-2">
             Escribe tu prompt para evaluar la calidad.
           </p>
         </div>

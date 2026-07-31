@@ -118,8 +118,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const qualityProgressCircle = document.getElementById('qualityProgressCircle');
   const qualityScoreNum = document.getElementById('qualityScoreNum');
   const qualityScoreLabel = document.getElementById('qualityScoreLabel');
+  const qualityLevelBadge = document.getElementById('qualityLevelBadge');
+  const qualityStars = document.getElementById('qualityStars');
   const recommendationsList = document.getElementById('recommendationsList');
   const metricsBreakdownContainer = document.getElementById('metricsBreakdownContainer');
+
+  // Optimization panel elements
+  const optimizedPromptCard = document.getElementById('optimizedPromptCard');
+  const optimizedPromptOutput = document.getElementById('optimizedPromptOutput');
+  const optLanguageBadge = document.getElementById('optLanguageBadge');
+  const optimizedImprovementsList = document.getElementById('optimizedImprovementsList');
+  const optBeforeCircle = document.getElementById('optBeforeCircle');
+  const optBeforeScore = document.getElementById('optBeforeScore');
+  const optBeforeStars = document.getElementById('optBeforeStars');
+  const optBeforeLabel = document.getElementById('optBeforeLabel');
+  const optBeforeLevelBadge = document.getElementById('optBeforeLevelBadge');
+  const optBeforeMetrics = document.getElementById('optBeforeMetrics');
+  const optAfterCircle = document.getElementById('optAfterCircle');
+  const optAfterScore = document.getElementById('optAfterScore');
+  const optAfterStars = document.getElementById('optAfterStars');
+  const optAfterLabel = document.getElementById('optAfterLabel');
+  const optAfterLevelBadge = document.getElementById('optAfterLevelBadge');
+  const optAfterMetrics = document.getElementById('optAfterMetrics');
+  const optTokensBefore = document.getElementById('optTokensBefore');
+  const optTokensAfter = document.getElementById('optTokensAfter');
+  const optTokensDiff = document.getElementById('optTokensDiff');
+  const optQualityBefore = document.getElementById('optQualityBefore');
+  const optQualityAfter = document.getElementById('optQualityAfter');
+  const optQualityDiff = document.getElementById('optQualityDiff');
+  const optLevelBefore = document.getElementById('optLevelBefore');
+  const optLevelAfter = document.getElementById('optLevelAfter');
+  const copyOptimizedBtn = document.getElementById('copyOptimizedBtn');
+  const optimizeScopeBtn = document.getElementById('optimizeScopeBtn');
+  const optimizeScopeMenu = document.getElementById('optimizeScopeMenu');
 
   // Models Grid
   const modelsGrid = document.getElementById('modelsGrid');
@@ -213,14 +244,109 @@ document.addEventListener('DOMContentLoaded', () => {
     recommendationCard.classList.remove('hidden');
   }
 
+  // Helper to evaluate prompt quality strictly and accurately
+  function evaluatePromptQuality(text) {
+    if (!text || !text.trim()) {
+      return {
+        score: 0,
+        lengthScore: 0,
+        actionScore: 0,
+        contextScore: 0,
+        formatScore: 0,
+        structureScore: 0,
+        level: '—',
+        stars: '☆☆☆',
+        levelClass: 'px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600',
+        starsClass: 'text-sm leading-none tracking-wide text-slate-600',
+        label: 'Escribe tu prompt para evaluar la calidad.'
+      };
+    }
+
+    const trimmed = text.trim();
+    const words = trimmed.split(/\s+/).length;
+    const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
+    const lower = trimmed.toLowerCase();
+
+    // 1. Longitud adecuada (max 25 pts)
+    let lengthScore = 0;
+    if (words < 8) lengthScore = 0;
+    else if (words < 20) lengthScore = 10;
+    else if (words <= 200) lengthScore = 25;
+    else if (words <= 350) lengthScore = 15;
+    else lengthScore = 10;
+
+    // 2. Verbo de acción/instrucción claro (max 20 pts)
+    const actionVerbs = /(actúa|actua|actuar|explica|explicar|genera|generar|analiza|analizar|escribe|escribir|resume|resumir|diseña|diseñar|crea|crear|traduce|traducir|resuelve|resolver|ayúdame|ayudar|cuál|cómo|desarrolla|desarrollar|programa|programar|calcula|calcular|ordena|ordenar|filtra|filtrar|construye|construir|describe|describir)/i;
+    const actionScore = actionVerbs.test(lower) ? 20 : 0;
+
+    // 3. Contexto o situación (max 15 pts)
+    const contextKeywords = /(ejemplo|contexto|caso|situación|escenario|basado en|dado que|para el proyecto|siguiente código|siguiente texto|donde|considerando|si ocurre|cuando)/i;
+    const contextScore = contextKeywords.test(lower) ? 15 : 0;
+
+    // 4. Restricciones/Formato especificado (max 20 pts)
+    const formatKeywords = /(formato|lista|tabla|json|markdown|tono|público|publico|experto|principiante|restríngete|restrigete|máximo|maximo|palabras|estricto|sin alucinaciones|pasos|viñetas|viñetas|salida|devuelve|retorna)/i;
+    const restrictionKeywords = /(no hagas|evita|debe tener|incluye|requiere|limitado a|solo devuelve|únicamente|sin explicar|restricciones:|sin inventar|sin alucinar)/i;
+    const formatScore = (formatKeywords.test(lower) || restrictionKeywords.test(lower)) ? 20 : 0;
+
+    // 5. Estructura (2+ oraciones bien formadas) (max 20 pts)
+    const hasParagraphs = text.includes('\n');
+    let structureScore = 0;
+    if (sentences >= 2 && hasParagraphs) structureScore = 20;
+    else if (sentences >= 2) structureScore = 18;
+    else if (sentences === 1 && words >= 20) structureScore = 8;
+
+    const totalScore = Math.min(100, lengthScore + actionScore + contextScore + formatScore + structureScore);
+
+    let level = "Básico";
+    let levelClass = "px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-red-500/15 text-red-300 border border-red-500/30";
+    let stars = "★☆☆";
+    let starsClass = "text-sm leading-none tracking-wide text-red-400";
+    let label = "Prompt muy vago o incompleto. Agrega rol, contexto y formato.";
+
+    if (totalScore >= 40 && totalScore <= 70) {
+      level = "Intermedio";
+      levelClass = "px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-500/15 text-amber-300 border border-amber-500/30";
+      stars = "★★☆";
+      starsClass = "text-sm leading-none tracking-wide text-amber-400";
+      label = "Prompt aceptable. Especifica restricciones o un formato de salida claro.";
+    } else if (totalScore > 70) {
+      level = "Pro";
+      levelClass = "px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+      stars = "★★★";
+      starsClass = "text-sm leading-none tracking-wide text-emerald-400";
+      label = "Prompt claro, bien estructurado y con alto nivel de precisión.";
+    }
+
+    return {
+      score: totalScore,
+      lengthScore,
+      actionScore,
+      contextScore,
+      formatScore,
+      structureScore,
+      level,
+      stars,
+      levelClass,
+      starsClass,
+      label
+    };
+  }
+
   // Prompt Analysis Heuristics & 6 Breakdown Metrics
   function runPromptAnalysis(text) {
+    const evalResult = evaluatePromptQuality(text);
+
     if (!text || !text.trim()) {
       qualityScoreNum.textContent = "0/100";
       qualityProgressCircle.style.strokeDashoffset = "251.2";
-      qualityScoreLabel.textContent = "Escribe tu prompt para evaluar la calidad.";
+      qualityScoreLabel.textContent = evalResult.label;
       qualityScoreLabel.className = "text-xs font-medium text-slate-400 mt-2 px-2";
-      
+
+      qualityLevelBadge.textContent = evalResult.level;
+      qualityLevelBadge.className = evalResult.levelClass;
+      qualityStars.textContent = evalResult.stars;
+      qualityStars.className = evalResult.starsClass;
+
       recommendationsList.innerHTML = `
         <li class="flex items-start gap-2">
           <span class="text-slate-500">•</span>
@@ -233,47 +359,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const trimmed = text.trim();
     const words = trimmed.split(/\s+/).length;
-    const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
 
-    let clarityScore = Math.min(20, Math.max(5, words >= 10 && sentences >= 1 ? 20 : 10));
-    const contextKeywords = /(ejemplo|contexto|caso|situación|escenario|basado en|dado que)/i;
-    let contextScore = contextKeywords.test(trimmed) ? 18 : 6;
-    const actionVerbs = /(actúa|explica|genera|analiza|escribe|resume|diseña|crea|traduce|resuelve|ayúdame|cuál|cómo|desarrolla|programa)/i;
-    let verbsScore = actionVerbs.test(trimmed) ? 20 : 8;
-    const constraintKeywords = /(formato|lista|tabla|json|código|markdown|tono|público|experto|principiante|restríngete|máximo|palabras|estricto)/i;
-    let formatScore = constraintKeywords.test(trimmed) ? 17 : 5;
-    let lengthScore = 15;
-    if (words < 10) lengthScore = 5;
-    else if (words >= 20 && words <= 250) lengthScore = 15;
-    else lengthScore = 10;
-    let structureScore = sentences >= 2 ? 10 : 4;
-
-    const totalScore = clarityScore + contextScore + verbsScore + formatScore + lengthScore + structureScore;
-    const score = Math.max(0, Math.min(100, totalScore));
-
-    qualityScoreNum.textContent = `${score}/100`;
+    qualityScoreNum.textContent = `${evalResult.score}/100`;
     const circumference = 251.2;
-    const offset = circumference - (score / 100) * circumference;
+    const offset = circumference - (evalResult.score / 100) * circumference;
     qualityProgressCircle.style.strokeDashoffset = offset;
 
-    if (score <= 40) {
-      qualityScoreLabel.textContent = "Prompt débil, necesita más contexto";
+    qualityLevelBadge.textContent = evalResult.level;
+    qualityLevelBadge.className = evalResult.levelClass;
+    qualityStars.textContent = evalResult.stars;
+    qualityStars.className = evalResult.starsClass;
+
+    qualityScoreLabel.textContent = evalResult.label;
+    if (evalResult.score < 40) {
       qualityScoreLabel.className = "text-xs font-medium text-[#f87171] mt-2 px-2";
-    } else if (score <= 70) {
-      qualityScoreLabel.textContent = "Prompt aceptable, puede mejorar";
+    } else if (evalResult.score <= 70) {
       qualityScoreLabel.className = "text-xs font-medium text-[#fb923c] mt-2 px-2";
     } else {
-      qualityScoreLabel.textContent = "Prompt claro y bien estructurado";
       qualityScoreLabel.className = "text-xs font-medium text-[#4ade80] mt-2 px-2";
     }
 
     const metrics = [
-      { name: "Claridad", val: clarityScore, max: 20 },
-      { name: "Contexto", val: contextScore, max: 18 },
-      { name: "Verbos de Acción", val: verbsScore, max: 20 },
-      { name: "Especificidad/Formato", val: formatScore, max: 17 },
-      { name: "Longitud Óptima", val: lengthScore, max: 15 },
-      { name: "Estructura", val: structureScore, max: 10 }
+      { name: "Longitud adecuada", val: evalResult.lengthScore, max: 25 },
+      { name: "Verbo de acción", val: evalResult.actionScore, max: 20 },
+      { name: "Contexto o situación", val: evalResult.contextScore, max: 15 },
+      { name: "Restricciones/Formato", val: evalResult.formatScore, max: 20 },
+      { name: "Estructura", val: evalResult.structureScore, max: 20 }
     ];
 
     metricsBreakdownContainer.innerHTML = metrics.map(m => {
@@ -292,16 +403,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
 
     const recs = [];
-    if (words < 15) recs.push("Agrega más contexto o detalle para obtener mejores resultados.");
+    if (words < 12) recs.push("Agrega más detalle o especifica la tecnología o área objetivo.");
     const formatKeywords = /(lista|tabla|json|código|markdown|esquema|viñetas)/i;
     if (!formatKeywords.test(trimmed)) recs.push("Especifica el formato de salida deseado (lista, tabla, código, JSON, etc.).");
-    const toneKeywords = /(tono|audiencia|experto|principiante|formal|casual|profesional)/i;
-    if (!toneKeywords.test(trimmed)) recs.push("Indica el tono o la audiencia objetivo (ej: profesional, para principiantes).");
-    const exampleKeywords = /(ejemplo|caso)/i;
-    if (!exampleKeywords.test(trimmed) && words > 15) recs.push("Considera pedir ejemplos prácticos para guiar mejor al modelo.");
+    const rolePattern = /(actúa|actua|eres un|as a|act as|rol:)/i;
+    if (!rolePattern.test(trimmed)) recs.push("Define un rol para el modelo (ej: 'Actúa como desarrollador senior').");
+    const constraintKeywords = /(restríngete|solo|únicamente|sin|evita|no hagas)/i;
+    if (!constraintKeywords.test(trimmed) && words > 10) recs.push("Agrega restricciones explícitas (ej: 'Evita explicaciones innecesarias').");
 
-    if (score >= 75 && recs.length === 0) {
-      recs.push("¡Excelente prompt! Está muy bien estructurado y es claro.");
+    if (evalResult.score >= 80 && recs.length === 0) {
+      recs.push("¡Excelente prompt! Está muy bien estructurado, delimitado y claro.");
     }
 
     recommendationsList.innerHTML = recs.map(rec => `
@@ -339,6 +450,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Reorder models so the most efficient model always appears FIRST
+    evaluatedModels.sort((a, b) => {
+      if (a.id === cheapestId) return -1;
+      if (b.id === cheapestId) return 1;
+      return a.totalCost - b.totalCost;
+    });
+
     let maxContextId = "gemini-1-5-pro";
 
     modelsGrid.innerHTML = evaluatedModels.map((m) => {
@@ -346,7 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const isLargestContext = m.id === maxContextId;
 
       let borderClass = "border-slate-800/80";
-      if (isCheapest) borderClass = "border-emerald-500/50 shadow-lg shadow-emerald-500/10";
+      if (isCheapest) {
+        borderClass = "border-2 border-emerald-400 shadow-[0_0_25px_rgba(52,211,153,0.35)] bg-emerald-950/20";
+      }
 
       return `
         <div class="model-card p-4 flex flex-col justify-between ${borderClass}">
@@ -362,8 +482,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
               </div>
               <div class="flex flex-col items-end gap-1">
-                ${isCheapest ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Más económico</span>' : ''}
-                ${isLargestContext ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Mayor contexto</span>' : ''}
+                ${isCheapest ? '<span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 border border-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.8)] uppercase tracking-wider">★ MÁS EFICIENTE</span>' : ''}
+                ${isLargestContext && !isCheapest ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Mayor contexto</span>' : ''}
               </div>
             </div>
 
@@ -411,6 +531,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sourceLang = sourceLangSelect.value;
     const targetLang = targetLangSelect.value;
+    const targetName = targetLangSelect.options[targetLangSelect.selectedIndex].text;
+
+    // Validation: source and target language must differ
+    if (sourceLang === targetLang) {
+      alert(`El idioma de origen y destino son el mismo (${targetName}). Cambia el idioma de destino.`);
+      return;
+    }
+
+    // Validation: if the text is already in the target language, do not translate it again
+    const localDetected = detectLanguage(cleanedText);
+    if ((targetLang === 'en' || targetLang === 'es') && localDetected === targetLang) {
+      alert(`El texto ya está en ${targetName}. No es necesario traducirlo.`);
+      return;
+    }
 
     translateBtn.disabled = true;
     const origHTML = translateBtn.innerHTML;
@@ -432,11 +566,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
 
         if (data && data.responseData && data.responseData.translatedText && data.responseData.translatedText !== part.text) {
-          translatedParts.push({ text: data.responseData.translatedText.trim(), sep: part.sep });
-
-          if (sourceLang === 'auto' && data.responseData.detectedLanguage && i === 0) {
-            applyDetectedLanguage(data.responseData.detectedLanguage);
+          // Validation: abort if the service detected the text is already in the target language
+          if (i === 0 && data.responseData.detectedLanguage) {
+            const detected = data.responseData.detectedLanguage.split('-')[0].toLowerCase();
+            if (detected === targetLang) {
+              translatedTextOutput.value = cleanedText;
+              updateStats(cleanedText, false);
+              applyDetectedLanguage(data.responseData.detectedLanguage);
+              alert(`El texto ya está en ${targetName}. No se realizó ninguna traducción.`);
+              return;
+            }
+            if (sourceLang === 'auto') applyDetectedLanguage(data.responseData.detectedLanguage);
           }
+          translatedParts.push({ text: data.responseData.translatedText.trim(), sep: part.sep });
         } else {
           translatedParts.push({ text: part.text, sep: part.sep });
         }
@@ -558,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Build the optimized prompt dynamically in the detected language
-  function buildOptimizedPrompt(text, lang) {
+  function buildOptimizedPrompt(text, lang, scope = 'all') {
     const analysis = analyzePrompt(text);
     const isEs = lang === 'es';
 
@@ -617,30 +759,147 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskLabel = isEs ? 'Tarea:' : 'Task:';
     const guidance = (tonePrompt + audiencePrompt).trim();
 
-    return `${role}
+    const defaultTemplate = `${role}
 
 ${taskLabel} ${text}
 
 ${formatPrompt}${guidance ? ' ' + guidance : ''}
 ${constraints}`;
+
+    if (scope === 'role') {
+      return `${role}
+
+${taskLabel} ${text}
+
+${isEs ? 'Prioriza responder con autoridad, claridad y precisión.' : 'Prioritize an authoritative, clear, and precise answer.'}
+${constraints}`;
+    }
+
+    if (scope === 'context') {
+      return `${role}
+
+${isEs ? 'Contexto ampliado:' : 'Expanded context:'} ${text}
+
+${isEs ? 'Conserva los detalles importantes y explica solo lo necesario.' : 'Preserve important details and explain only what is necessary.'}
+${constraints}`;
+    }
+
+    if (scope === 'format') {
+      return `${role}
+
+${taskLabel} ${text}
+
+${formatPrompt}
+${constraints}`;
+    }
+
+    return defaultTemplate;
   }
 
-  // Optimize prompt feature (isolated, does not touch translation)
-  function optimizePrompt() {
-    const text = promptInput.value.trim();
-    if (!text) {
+  // Optimize prompt feature: renders dedicated Optimization Panel without overwriting input
+  function optimizePrompt(scope = 'all') {
+    const sourceText = optimizedPromptOutput.value.trim() || promptInput.value.trim();
+    if (!sourceText) {
       alert('Por favor, introduce un prompt para optimizar.');
       return;
     }
 
-    const lang = detectLanguage(text);
-    const optimized = buildOptimizedPrompt(text, lang);
-    const cleaned = optimized
+    const lang = detectLanguage(sourceText);
+    const baseAnalysis = analyzePrompt(sourceText);
+    const rawOptimized = buildOptimizedPrompt(sourceText, lang, scope);
+    const cleanedOptimized = rawOptimized
       .replace(/[ \t]+/g, ' ')
       .replace(/\s*\n\s*/g, '\n')
       .trim();
-    promptInput.value = cleaned;
-    updateStats(cleaned, true);
+
+    const modelName = modelSelect.value;
+    const origTokens = countTokens(sourceText, modelName);
+    const optTokens = countTokens(cleanedOptimized, modelName);
+
+    const origAnalysis = evaluatePromptQuality(sourceText);
+    const optAnalysis = evaluatePromptQuality(cleanedOptimized);
+
+    const beforeMetrics = document.getElementById('optBeforeMetrics');
+    const afterMetrics = document.getElementById('optAfterMetrics');
+    const beforeCircle = document.getElementById('optBeforeCircle');
+    const afterCircle = document.getElementById('optAfterCircle');
+    const beforeScore = document.getElementById('optBeforeScore');
+    const afterScore = document.getElementById('optAfterScore');
+    const beforeLabel = document.getElementById('optBeforeLabel');
+    const afterLabel = document.getElementById('optAfterLabel');
+    const beforeLevel = document.getElementById('optBeforeLevelBadge');
+    const afterLevel = document.getElementById('optAfterLevelBadge');
+    const beforeStars = document.getElementById('optBeforeStars');
+    const afterStars = document.getElementById('optAfterStars');
+
+    const metricRows = (analysis) => `
+      <div class="space-y-2 text-[11px]">
+        <div class="flex justify-between"><span>Longitud adecuada</span><span class="text-cyan-300 font-bold">${analysis.lengthScore}/25</span></div>
+        <div class="flex justify-between"><span>Verbo de acción</span><span class="text-cyan-300 font-bold">${analysis.actionScore}/20</span></div>
+        <div class="flex justify-between"><span>Contexto o situación</span><span class="text-cyan-300 font-bold">${analysis.contextScore}/15</span></div>
+        <div class="flex justify-between"><span>Restricciones/Formato</span><span class="text-cyan-300 font-bold">${analysis.formatScore}/20</span></div>
+        <div class="flex justify-between"><span>Estructura</span><span class="text-cyan-300 font-bold">${analysis.structureScore}/20</span></div>
+      </div>`;
+
+    beforeMetrics.innerHTML = metricRows(origAnalysis);
+    afterMetrics.innerHTML = metricRows(optAnalysis);
+
+    beforeCircle.style.strokeDashoffset = `${251.2 - (origAnalysis.score / 100) * 251.2}`;
+    afterCircle.style.strokeDashoffset = `${251.2 - (optAnalysis.score / 100) * 251.2}`;
+    beforeScore.textContent = `${origAnalysis.score}/100`;
+    afterScore.textContent = `${optAnalysis.score}/100`;
+    beforeLabel.textContent = origAnalysis.label;
+    afterLabel.textContent = optAnalysis.label;
+    beforeLevel.textContent = `${origAnalysis.level}`;
+    afterLevel.textContent = `${optAnalysis.level}`;
+    beforeLevel.className = origAnalysis.levelClass;
+    afterLevel.className = optAnalysis.levelClass;
+    beforeStars.textContent = origAnalysis.stars;
+    afterStars.textContent = optAnalysis.stars;
+    beforeStars.className = origAnalysis.starsClass;
+    afterStars.className = optAnalysis.starsClass;
+
+    // Populate panel
+    optimizedPromptOutput.value = cleanedOptimized;
+    optLanguageBadge.textContent = lang === 'es' ? '🇪🇸 Español' : '🇺🇸 Inglés';
+
+    optTokensBefore.textContent = origTokens;
+    optTokensAfter.textContent = optTokens;
+    const tokenDiffPct = origTokens > 0 ? Math.round(((optTokens - origTokens) / origTokens) * 100) : 0;
+    optTokensDiff.textContent = `${tokenDiffPct >= 0 ? '+' : ''}${tokenDiffPct}%`;
+    optTokensDiff.className = tokenDiffPct > 0
+      ? 'text-[10px] font-extrabold px-2 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30'
+      : 'text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+
+    optQualityBefore.textContent = `${origAnalysis.score}/100`;
+    optQualityAfter.textContent = `${optAnalysis.score}/100`;
+    const qualityDiffPts = optAnalysis.score - origAnalysis.score;
+    optQualityDiff.textContent = `${qualityDiffPts >= 0 ? '+' : ''}${qualityDiffPts} pts`;
+
+    optLevelBefore.textContent = `${origAnalysis.level} ${origAnalysis.stars}`;
+    optLevelAfter.textContent = `${optAnalysis.level} ${optAnalysis.stars}`;
+
+    const typeLabelMap = { code: 'Código', creative: 'Creativo', analysis: 'Análisis', data: 'Datos', general: 'Asistente IA' };
+    const selectedScopeLabel = {
+      all: 'Optimizar todo',
+      role: 'Rol y objetivo',
+      context: 'Contexto y detalle',
+      format: 'Formato y restricciones'
+    }[scope] || 'Optimizar todo';
+
+    const improvements = [
+      `✓ Ámbito: ${selectedScopeLabel}`,
+      `✓ Rol: ${typeLabelMap[baseAnalysis.type] || 'Experto'}`,
+      `✓ Formato: ${baseAnalysis.formats.length ? baseAnalysis.formats.join(', ') : 'Estructurado'}`,
+      `✓ Precisión y anti-alucinación`
+    ];
+
+    optimizedImprovementsList.innerHTML = improvements.map(imp => `
+      <span class="px-2.5 py-1 rounded-lg bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/25 font-medium">${imp}</span>
+    `).join('');
+
+    optimizedPromptCard.classList.remove('hidden');
+    optimizedPromptCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // Event Listeners with Debounce (300ms) for promptInput
@@ -664,6 +923,36 @@ ${constraints}`;
   translateBtn.addEventListener('click', translateText);
   optimizeBtn.addEventListener('click', optimizePrompt);
 
+  optimizeScopeBtn.addEventListener('click', () => {
+    optimizeScopeMenu.classList.toggle('hidden');
+  });
+
+  optimizeScopeMenu.querySelectorAll('button[data-scope]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      optimizeScopeMenu.classList.add('hidden');
+      optimizePrompt(btn.dataset.scope || 'all');
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!optimizeScopeMenu.contains(event.target) && !optimizeScopeBtn.contains(event.target)) {
+      optimizeScopeMenu.classList.add('hidden');
+    }
+  });
+
+  copyOptimizedBtn.addEventListener('click', () => {
+    const val = optimizedPromptOutput.value;
+    if (!val) return;
+    navigator.clipboard.writeText(val).then(() => {
+      const origSpan = copyOptimizedBtn.querySelector('span');
+      const origText = origSpan.textContent;
+      origSpan.textContent = '¡Copiado!';
+      setTimeout(() => {
+        origSpan.textContent = origText;
+      }, 2000);
+    });
+  });
+
   copyBtn.addEventListener('click', () => {
     const textToCopy = translatedTextOutput.value || promptInput.value;
     if (!textToCopy) {
@@ -686,6 +975,9 @@ ${constraints}`;
   clearBtn.addEventListener('click', () => {
     promptInput.value = '';
     translatedTextOutput.value = '';
+    if (optimizedPromptOutput) optimizedPromptOutput.value = '';
+    if (optimizedPromptCard) optimizedPromptCard.classList.add('hidden');
+    if (optimizeScopeMenu) optimizeScopeMenu.classList.add('hidden');
     updateStats('', true);
     updateStats('', false);
     recommendationCard.classList.add('hidden');
