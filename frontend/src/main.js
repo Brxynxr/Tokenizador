@@ -10,7 +10,7 @@ const MODELS = [
     inputCostPer1M: 2.50,
     outputCostPer1M: 10.00,
     contextWindow: "128K",
-    contextValue: 128000
+    strength: "Razonamiento complejo & multimodal"
   },
   {
     id: "claude-3-5",
@@ -21,7 +21,7 @@ const MODELS = [
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
     contextWindow: "200K",
-    contextValue: 200000
+    strength: "Redacción natural y código avanzado"
   },
   {
     id: "gemini-1-5-pro",
@@ -32,7 +32,7 @@ const MODELS = [
     inputCostPer1M: 1.25,
     outputCostPer1M: 5.00,
     contextWindow: "2M",
-    contextValue: 2000000
+    strength: "Ventana de contexto masiva (2M tokens)"
   },
   {
     id: "llama-3-1",
@@ -43,7 +43,7 @@ const MODELS = [
     inputCostPer1M: 0.70,
     outputCostPer1M: 0.90,
     contextWindow: "128K",
-    contextValue: 128000
+    strength: "Modelo open-source eficiente"
   },
   {
     id: "mistral-large",
@@ -54,7 +54,7 @@ const MODELS = [
     inputCostPer1M: 2.00,
     outputCostPer1M: 6.00,
     contextWindow: "128K",
-    contextValue: 128000
+    strength: "Multilingüe y razonamiento lógico"
   },
   {
     id: "deepseek-v3",
@@ -65,7 +65,7 @@ const MODELS = [
     inputCostPer1M: 0.14,
     outputCostPer1M: 0.28,
     contextWindow: "64K",
-    contextValue: 64000
+    strength: "Ultra económico y alta velocidad"
   }
 ];
 
@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tempExplanation = document.getElementById('tempExplanation');
   const tempIndicatorDot = document.getElementById('tempIndicatorDot');
   const recommendationsList = document.getElementById('recommendationsList');
+  const metricsBreakdownContainer = document.getElementById('metricsBreakdownContainer');
 
   // Models Accordion elements
   const modelsAccordionHeader = document.getElementById('modelsAccordionHeader');
@@ -114,6 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let isRotated = false;
   let isAccordionOpen = false;
   let debounceTimer = null;
+  // Track liked state for each model id
+  const likedModels = new Set();
 
   // Toggle Accordion
   modelsAccordionHeader.addEventListener('click', () => {
@@ -196,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Prompt Analysis Heuristics
+  // Prompt Analysis Heuristics & 6 Breakdown Metrics
   function runPromptAnalysis(text) {
     if (!text || !text.trim()) {
       qualityScoreNum.textContent = "0/100";
@@ -214,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>Escribe tu prompt para recibir sugerencias de mejora en tiempo real.</span>
         </li>
       `;
+      metricsBreakdownContainer.innerHTML = `<div class="text-slate-500 text-center py-4">Esperando prompt...</div>`;
       return;
     }
 
@@ -221,25 +225,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const words = trimmed.split(/\s+/).length;
     const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
 
-    let score = 50;
-    if (words < 8) score -= 25;
-    else if (words < 15) score -= 10;
-    else if (words >= 20 && words <= 200) score += 20;
-    else if (words > 350) score -= 10;
+    // 6 Metrics Calculation (percentage weights totaling 100%)
+    // 1. Claridad (Clarity based on sentence structure & readability)
+    let clarityScore = Math.min(20, Math.max(5, words >= 10 && sentences >= 1 ? 20 : 10));
 
-    const actionVerbs = /(actúa|explica|genera|analiza|escribe|resume|diseña|crea|traduce|resuelve|ayúdame|cuál|cómo|desarrolla|programa)/i;
-    if (actionVerbs.test(trimmed)) score += 15;
-
+    // 2. Contexto (Context presence)
     const contextKeywords = /(ejemplo|contexto|caso|situación|escenario|basado en|dado que)/i;
-    if (contextKeywords.test(trimmed)) score += 10;
+    let contextScore = contextKeywords.test(trimmed) ? 18 : 6;
 
+    // 3. Verbos de Acción (Action verbs / instructions)
+    const actionVerbs = /(actúa|explica|genera|analiza|escribe|resume|diseña|crea|traduce|resuelve|ayúdame|cuál|cómo|desarrolla|programa)/i;
+    let verbsScore = actionVerbs.test(trimmed) ? 20 : 8;
+
+    // 4. Especificidad & Formato
     const constraintKeywords = /(formato|lista|tabla|json|código|markdown|tono|público|experto|principiante|restríngete|máximo|palabras|estricto)/i;
-    if (constraintKeywords.test(trimmed)) score += 15;
+    let formatScore = constraintKeywords.test(trimmed) ? 17 : 5;
 
-    if (sentences >= 2) score += 10;
+    // 5. Longitud Óptima
+    let lengthScore = 15;
+    if (words < 10) lengthScore = 5;
+    else if (words >= 20 && words <= 250) lengthScore = 15;
+    else lengthScore = 10;
 
-    score = Math.max(0, Math.min(100, score));
+    // 6. Estructura
+    let structureScore = sentences >= 2 ? 10 : 4;
 
+    const totalScore = clarityScore + contextScore + verbsScore + formatScore + lengthScore + structureScore;
+    const score = Math.max(0, Math.min(100, totalScore));
+
+    // Update Quality Circle UI
     qualityScoreNum.textContent = `${score}/100`;
     const circumference = 251.2;
     const offset = circumference - (score / 100) * circumference;
@@ -256,6 +270,32 @@ document.addEventListener('DOMContentLoaded', () => {
       qualityScoreLabel.className = "text-xs font-medium text-[#4ade80] mt-2 px-2";
     }
 
+    // Render 6 Metrics Breakdown
+    const metrics = [
+      { name: "Claridad", val: clarityScore, max: 20 },
+      { name: "Contexto", val: contextScore, max: 18 },
+      { name: "Verbos de Acción", val: verbsScore, max: 20 },
+      { name: "Especificidad/Formato", val: formatScore, max: 17 },
+      { name: "Longitud Óptima", val: lengthScore, max: 15 },
+      { name: "Estructura", val: structureScore, max: 10 }
+    ];
+
+    metricsBreakdownContainer.innerHTML = metrics.map(m => {
+      const pct = Math.round((m.val / m.max) * 100);
+      return `
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-300 font-medium">${m.name}</span>
+            <span class="text-indigo-400 font-bold">${m.val}/${m.max} (${pct}%)</span>
+          </div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Temperature Heuristics
     let temp = 0.5;
     const creativeWords = /(historia|poema|brainstorm|ideas|ficción|crear|inventa|narrativa|cuento|imagina|creativo)/i;
     const technicalWords = /(código|datos|exacto|preciso|función|api|sql|bug|calcular|fórmula|matemáticas|analiza|técnico|json|script)/i;
@@ -275,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = temp * 100;
     tempIndicatorDot.style.left = `${percent}%`;
 
+    // Recommendations Generation
     const recs = [];
     if (words < 15) {
       recs.push("Agrega más contexto o detalle para obtener mejores resultados.");
@@ -304,107 +345,113 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  // Render Model Comparison Cards
+  // Render Model Comparison Cards (Tarjetitas with Like toggle)
   function renderModelComparisonCards() {
     const inputTokens = parseInt(statInputTokens.textContent) || 0;
-    const assumedOutputTokens = 500; // Average response assumption
+    const assumedOutputTokens = 500;
+    const qualityScoreNumVal = parseInt(qualityScoreNum.textContent) || 50;
 
-    // Calculate costs for each model
+    // Improved comparison logic based on prompt and analysis
     const evaluatedModels = MODELS.map(model => {
       const inputCost = (inputTokens / 1000000) * model.inputCostPer1M;
       const outputCost = (assumedOutputTokens / 1000000) * model.outputCostPer1M;
       const totalCost = inputCost + outputCost;
+
+      // Suitability score based on model strengths & prompt characteristics
+      let fitScore = 80;
+      if (model.id === 'deepseek-v3') fitScore += 15; // budget friendly
+      if (model.id === 'gemini-1-5-pro' && inputTokens > 5000) fitScore += 20; // context heavy
+      if (model.id === 'gpt-4o' && qualityScoreNumVal > 70) fitScore += 10;
+
       return {
         ...model,
         inputCost,
         outputCost,
         totalCost,
-        tokens: inputTokens
+        tokens: inputTokens,
+        fitScore: Math.min(99, fitScore)
       };
     });
 
-    // Find cheapest model (lowest total cost)
-    let cheapestId = null;
-    let minCost = Infinity;
-    evaluatedModels.forEach(m => {
-      if (m.totalCost < minCost) {
-        minCost = m.totalCost;
-        cheapestId = m.id;
-      }
-    });
-
-    // Find largest context window model
-    let maxContextId = "gemini-1-5-pro"; // Gemini 1.5 Pro has 2M
-
     modelsGrid.innerHTML = evaluatedModels.map((m, index) => {
-      const isCheapest = m.id === cheapestId;
-      const isLargestContext = m.id === maxContextId;
-
-      let borderClass = "border-slate-800/80";
-      if (isCheapest) borderClass = "border-emerald-500/50 shadow-lg shadow-emerald-500/10";
+      const isLiked = likedModels.has(m.id);
 
       return `
-        model-card p-4 flex flex-col justify-between opacity-0 translate-y-3 transition-all duration-300 ${borderClass}" 
-        style="transition-delay: ${index * 50}ms;"
-        id="model-card-${m.id}"
-      >
-        <div>
-          <!-- Model Header -->
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-xl ${m.color} border flex items-center justify-center font-bold text-xs">
-                ${m.initial}
+        <div class="model-mini-card p-4 flex flex-col justify-between opacity-0 translate-y-3 transition-all duration-300" 
+             style="transition-delay: ${index * 40}ms;"
+             id="model-mini-${m.id}"
+        >
+          <div>
+            <!-- Top bar: Initial, Name, and Like button -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl ${m.color} border flex items-center justify-center font-bold text-xs">
+                  ${m.initial}
+                </div>
+                <div>
+                  <h3 class="font-bold text-sm text-white leading-tight">${m.name}</h3>
+                  <span class="text-[11px] text-slate-400">${m.company}</span>
+                </div>
               </div>
-              <div>
-                <h3 class="font-bold text-sm text-white leading-tight">${m.name}</h3>
-                <span class="text-[11px] text-slate-400">${m.company}</span>
-              </div>
+              <button onclick="window.toggleLikeModel('${m.id}')" title="Dar like para ver info" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isLiked ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'}">
+                ❤️
+              </button>
             </div>
-            <div class="flex flex-col items-end gap-1">
-              ${isCheapest ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Más económico</span>' : ''}
-              ${isLargestContext ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Mayor contexto</span>' : ''}
+
+            <p class="text-[11px] text-slate-300 mb-3 italic">"${m.strength}"</p>
+
+            <!-- Collapsible details when liked -->
+            <div id="model-details-${m.id}" class="space-y-2 pt-2 border-t border-slate-800/80 text-xs ${isLiked ? 'block' : 'hidden'}">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Tokens estimados:</span>
+                <span class="font-bold text-white">${m.tokens}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Costo input:</span>
+                <span class="font-mono text-slate-200">$${m.inputCost.toFixed(6)}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Costo output (~500t):</span>
+                <span class="font-mono text-slate-200">$${m.outputCost.toFixed(5)}</span>
+              </div>
+              <div class="flex justify-between items-center pt-1 border-t border-slate-800/50">
+                <span class="text-slate-300 font-medium">Costo total:</span>
+                <span class="font-mono font-bold text-indigo-400">$${m.totalCost.toFixed(5)}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Contexto:</span>
+                <span class="font-bold text-slate-200">${m.contextWindow}</span>
+              </div>
             </div>
           </div>
 
-          <!-- Stats List -->
-          <div class="space-y-2 pt-2 border-t border-slate-800/60 text-xs">
-            <div class="flex justify-between items-center">
-              <span class="text-slate-400">Tokens estimados:</span>
-              <span class="font-bold text-white">${m.tokens}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-400">Costo input:</span>
-              <span class="font-mono text-slate-200">$${m.inputCost.toFixed(6)}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-slate-400">Costo output (~500t):</span>
-              <span class="font-mono text-slate-200">$${m.outputCost.toFixed(5)}</span>
-            </div>
-            <div class="flex justify-between items-center pt-1 border-t border-slate-800/40">
-              <span class="text-slate-300 font-medium">Costo total:</span>
-              <span class="font-mono font-bold text-indigo-400">$${m.totalCost.toFixed(5)}</span>
-            </div>
+          <div class="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
+            <span class="text-slate-400">Compatibilidad Prompt:</span>
+            <span class="font-bold text-emerald-400">${m.fitScore}%</span>
           </div>
         </div>
-
-        <div class="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
-          <span class="text-slate-400">Ventana de contexto:</span>
-          <span class="font-bold text-slate-200 px-2 py-0.5 rounded bg-slate-800/80">${m.contextWindow}</span>
-        </div>
-      </div>
       `;
     }).join('');
 
-    // Trigger stagger fade-in animation
     setTimeout(() => {
       evaluatedModels.forEach((m) => {
-        const el = document.getElementById(`model-card-${m.id}`);
+        const el = document.getElementById(`model-mini-${m.id}`);
         if (el) {
           el.classList.remove('opacity-0', 'translate-y-3');
         }
       });
     }, 20);
   }
+
+  // Global helper for like toggle
+  window.toggleLikeModel = function(id) {
+    if (likedModels.has(id)) {
+      likedModels.delete(id);
+    } else {
+      likedModels.add(id);
+    }
+    renderModelComparisonCards();
+  };
 
   // Contextual translation using free public API
   async function translateText() {
@@ -420,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     translateBtn.disabled = true;
     const origHTML = translateBtn.innerHTML;
-    translateBtn.innerHTML = `<span>Traduciendo...</span>`;
+    translateBtn.innerHTML = `<span>...</span>`;
 
     try {
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
@@ -473,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     optimizeBtn.disabled = true;
     const origHTML = optimizeBtn.innerHTML;
-    optimizeBtn.innerHTML = `<span>Optimizando...</span>`;
+    optimizeBtn.innerHTML = `<span>...</span>`;
 
     try {
       const optimized = `Act as an expert AI assistant. Provide a highly detailed, accurate, and well-structured response for the following objective:\n\n${text}\n\nEnsure clarity, precision, and actionable insights.`;
@@ -520,10 +567,9 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.clipboard.writeText(textToCopy).then(() => {
       const orig = copyBtn.innerHTML;
       copyBtn.innerHTML = `
-        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
-        ¡Copiado ✓!
       `;
       setTimeout(() => {
         copyBtn.innerHTML = orig;
