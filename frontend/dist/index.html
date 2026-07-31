@@ -5,43 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tokenizador & Traductor Contextual de Prompts</title>
   <style>
+    :root {
+      --neon-cyan: #00f0ff;
+      --neon-fuchsia: #ff2fd6;
+      --neon-violet: #8b5cf6;
+      --bg-deep: #05060f;
+    }
     body {
-      background-color: #0a0e1a;
+      background-color: var(--bg-deep);
       color: #e2e5ee;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    /* Aurora animada de fondo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(0,240,255,0.10) 0%, transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(255,47,214,0.08) 0%, transparent 40%),
+        radial-gradient(circle at 75% 85%, rgba(139,92,246,0.10) 0%, transparent 45%),
+        radial-gradient(circle at 25% 90%, rgba(0,240,255,0.06) 0%, transparent 40%);
+      animation: aurora 18s ease-in-out infinite alternate;
+    }
+    @keyframes aurora {
+      0% { transform: translate(0, 0) scale(1); filter: hue-rotate(0deg); }
+      50% { transform: translate(-2%, 3%) scale(1.05); filter: hue-rotate(20deg); }
+      100% { transform: translate(2%, -2%) scale(1.08); filter: hue-rotate(-10deg); }
+    }
+    /* Rejilla futurista */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,240,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,240,255,0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      animation: gridPulse 8s ease-in-out infinite;
+    }
+    @keyframes gridPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
     }
     .radial-glow {
       position: absolute;
       width: 600px;
       height: 600px;
-      background: radial-gradient(circle, rgba(168,85,247,0.07) 0%, rgba(34,211,238,0.04) 40%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,47,214,0.09) 0%, rgba(0,240,255,0.05) 45%, transparent 70%);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 0;
+      filter: blur(30px);
+      animation: glowBreath 10s ease-in-out infinite;
+    }
+    @keyframes glowBreath {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
     }
     .custom-card {
-      background: #12172a;
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 0 25px rgba(80,120,255,0.06);
-      backdrop-filter: blur(10px);
+      background: rgba(11, 14, 29, 0.7);
+      border: 1px solid rgba(0, 240, 255, 0.12);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.06), inset 0 0 30px rgba(139, 92, 246, 0.03);
+      backdrop-filter: blur(14px);
       border-radius: 16px;
+      position: relative;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+    .custom-card:hover {
+      border-color: rgba(0, 240, 255, 0.25);
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.10), 0 0 60px rgba(255, 47, 214, 0.06);
     }
     .custom-textarea {
-      background: #0d1120;
-      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(8, 10, 22, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.10);
       border-radius: 12px;
       color: #e2e5ee;
       resize: none;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
     .custom-textarea:focus {
-      border-color: rgba(99,102,241,0.5);
+      border-color: rgba(0, 240, 255, 0.6);
       outline: none;
-      box-shadow: 0 0 10px rgba(99,102,241,0.2);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.25), inset 0 0 12px rgba(0, 240, 255, 0.05);
+    }
+    .custom-textarea::-moz-placeholder {
+      color: #5b6478;
+    }
+    .custom-textarea::placeholder {
+      color: #5b6478;
     }
     .neon-ring {
-      background: #0a0e1a;
+      background: var(--bg-deep);
       position: relative;
       border-radius: 9999px;
     }
@@ -62,57 +125,77 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
+      position: relative;
     }
     .btn-optimize {
-      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      background: linear-gradient(135deg, #8b5cf6, #ff2fd6);
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
     }
     .btn-optimize:hover {
-      filter: brightness(1.1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(168,85,247,0.4);
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(255, 47, 214, 0.55), 0 0 30px rgba(139, 92, 246, 0.35);
+      animation: btnPulse 1.6s ease-in-out infinite;
     }
     .btn-translate {
-      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      background: linear-gradient(135deg, #00c6ff, #8b5cf6);
+      box-shadow: 0 0 12px rgba(0, 198, 255, 0.35);
     }
     .btn-translate:hover {
-      filter: brightness(1.1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(59,130,246,0.4);
+      filter: brightness(1.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.55), 0 0 30px rgba(139, 92, 246, 0.35);
+      animation: btnPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes btnPulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(0,240,255,0.45), 0 0 30px rgba(139,92,246,0.3); }
+      50% { box-shadow: 0 4px 24px rgba(0,240,255,0.7), 0 0 40px rgba(139,92,246,0.5); }
     }
     .btn-secondary {
       background: #151b2e;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(0, 240, 255, 0.15);
     }
     .btn-secondary:hover {
       background: #1e2640;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0, 240, 255, 0.15);
     }
     .btn-danger {
       background: #151b2e;
-      border: 1px solid rgba(248,113,113,0.2);
+      border: 1px solid rgba(248, 113, 113, 0.25);
       color: #f87171;
     }
     .btn-danger:hover {
-      background: rgba(248,113,113,0.08);
-      transform: translateY(-1px);
+      background: rgba(248, 113, 113, 0.10);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(248, 113, 113, 0.2);
     }
     button:active {
       transform: scale(0.95) !important;
     }
     .model-card {
-      background: #0d1120;
-      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(13, 17, 32, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.08);
       border-radius: 12px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(8px);
     }
     .model-card:hover {
       transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 10px 30px rgba(34,211,238,0.15);
-      border-color: rgba(34,211,238,0.3);
+      box-shadow: 0 10px 30px rgba(0, 240, 255, 0.15), 0 0 40px rgba(255, 47, 214, 0.08);
+      border-color: rgba(0, 240, 255, 0.35);
+    }
+    /* Texto con gradiente animado */
+    .animate-text-shimmer {
+      background-size: 200% auto;
+      animation: textShimmer 4s linear infinite;
+    }
+    @keyframes textShimmer {
+      to { background-position: 200% center; }
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BY_4bQcX.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DEbfDoWu.css">
+  <script type="module" crossorigin src="/assets/index-Cs8uX72W.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-B7WIHW6G.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
   
@@ -122,13 +205,13 @@
   <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-black/20">
     <div class="max-w-[1200px] mx-auto px-6 h-20 flex items-center justify-between">
       <div class="flex items-center space-x-3.5">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-400 via-fuchsia-500 to-violet-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/30 animate-pulse">
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
         </div>
         <div>
-          <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">PromptToken AI</span>
+          <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent animate-text-shimmer">PromptToken AI</span>
           <span class="block text-[10px] text-cyan-400 font-semibold tracking-wider uppercase">Optimizador & Traductor de LLMs</span>
         </div>
       </div>
@@ -137,7 +220,7 @@
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span class="text-xs text-slate-300 font-medium">Motor Local Activo</span>
         </div>
-        <select id="modelSelect" class="bg-[#12172a] border border-slate-700/60 text-slate-200 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-md">
+        <select id="modelSelect" class="bg-[#12172a] border border-slate-700/60 text-slate-200 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-cyan-400 cursor-pointer shadow-md">
           <option value="cl100k_base">Tokenizador: GPT-4 / GPT-3.5 (cl100k_base)</option>
           <option value="p50k_base">Tokenizador: GPT-3 (p50k_base)</option>
           <option value="r50k_base">Tokenizador: GPT-2 / DaVinci (r50k_base)</option>
@@ -198,7 +281,7 @@
           </div>
           <div>
             <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Tokens</div>
-            <div id="statInputTokens" class="text-xs font-bold text-indigo-400">0</div>
+            <div id="statInputTokens" class="text-xs font-bold text-cyan-300">0</div>
           </div>
           <div>
             <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Temp</div>
@@ -288,7 +371,7 @@
           </div>
           <div>
             <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Tokens</div>
-            <div id="statTransTokens" class="text-xs font-bold text-indigo-400">0</div>
+            <div id="statTransTokens" class="text-xs font-bold text-cyan-300">0</div>
           </div>
           <div>
             <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Temp</div>
@@ -318,7 +401,7 @@
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
       <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 flex items-center justify-center">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
             </svg>
@@ -342,7 +425,7 @@
               <defs>
                 <linearGradient id="qualityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stop-color="#22d3ee" />
-                  <stop offset="100%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#ff2fd6" />
                 </linearGradient>
               </defs>
             </svg>
@@ -366,7 +449,7 @@
           </div>
           <div class="mt-4 pt-2 border-t border-slate-800/65 flex items-center justify-between text-[11px] text-slate-500">
             <span>Ponderación total</span>
-            <span class="text-indigo-400 font-medium">100% heurístico</span>
+            <span class="text-cyan-300 font-medium">100% heurístico</span>
           </div>
         </div>
 

@@ -282,10 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <div>
           <div class="flex justify-between text-[11px] mb-1">
             <span class="text-slate-300 font-medium">${m.name}</span>
-            <span class="text-indigo-400 font-bold">${m.val}/${m.max} (${pct}%)</span>
+            <span class="text-cyan-300 font-bold">${m.val}/${m.max} (${pct}%)</span>
           </div>
           <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-gradient-to-r from-cyan-400 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+            <div class="bg-gradient-to-r from-cyan-400 to-fuchsia-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
           </div>
         </div>
       `;
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     recommendationsList.innerHTML = recs.map(rec => `
       <li class="flex items-start gap-2">
-        <span class="text-indigo-400">💡</span>
+        <span class="text-cyan-300">💡</span>
         <span>${rec}</span>
       </li>
     `).join('');
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
               <div class="flex justify-between items-center pt-1 border-t border-slate-800/40">
                 <span class="text-slate-300 font-medium">Costo total:</span>
-                <span class="font-mono font-bold text-indigo-400">$${m.totalCost.toFixed(5)}</span>
+                <span class="font-mono font-bold text-cyan-300">$${m.totalCost.toFixed(5)}</span>
               </div>
             </div>
           </div>
