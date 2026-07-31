@@ -1,3 +1,4 @@
+import "./style.css";
 import { getEncoding } from "js-tiktoken";
 
 const MODELS = [

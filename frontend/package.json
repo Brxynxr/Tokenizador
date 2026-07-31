@@ -12,6 +12,9 @@
     "js-tiktoken": "^1.0.21"
   },
   "devDependencies": {
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.25",
+    "tailwindcss": "^3.4.19",
     "vite": "^5.0.0"
   }
 }
