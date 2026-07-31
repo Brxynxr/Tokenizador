@@ -10,7 +10,21 @@ const MODELS = [
     color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
     inputCostPer1M: 2.50,
     outputCostPer1M: 10.00,
-    contextWindow: "128K"
+    contextWindow: "128K",
+    strength: "Equilibrio ideal entre razonamiento, velocidad y multimodalidad para uso general.",
+    weakness: "Costo medio-alto; puede saturarse en horas pico."
+  },
+  {
+    id: "gpt-4o-mini",
+    name: "GPT-4o mini",
+    company: "OpenAI",
+    initial: "4m",
+    color: "bg-teal-500/20 text-teal-400 border-teal-500/30",
+    inputCostPer1M: 0.15,
+    outputCostPer1M: 0.60,
+    contextWindow: "128K",
+    strength: "Costo muy bajo y baja latencia para tareas masivas y simples.",
+    weakness: "Razonamiento profundo y seguimiento de instrucciones complejas limitados."
   },
   {
     id: "claude-3-5",
@@ -20,7 +34,21 @@ const MODELS = [
     color: "bg-amber-500/20 text-amber-400 border-amber-500/30",
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
-    contextWindow: "200K"
+    contextWindow: "200K",
+    strength: "Excelente calidad en código y redacción; contexto amplio de 200K.",
+    weakness: "Precio alto; mayor latencia en cargas elevadas."
+  },
+  {
+    id: "claude-3-5-haiku",
+    name: "Claude 3.5 Haiku",
+    company: "Anthropic",
+    initial: "Ha",
+    color: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+    inputCostPer1M: 0.80,
+    outputCostPer1M: 4.00,
+    contextWindow: "200K",
+    strength: "Rápido y económico; ideal para clasificación, extracción y resúmenes.",
+    weakness: "Alcance limitado en tareas analíticas complejas."
   },
   {
     id: "gemini-1-5-pro",
@@ -30,7 +58,9 @@ const MODELS = [
     color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     inputCostPer1M: 1.25,
     outputCostPer1M: 5.00,
-    contextWindow: "2M"
+    contextWindow: "2M",
+    strength: "Ventana de contexto líder de 2M tokens y capacidades multimodales.",
+    weakness: "Razonamiento multi-paso variable; costo intermedio."
   },
   {
     id: "llama-3-1",
@@ -40,7 +70,9 @@ const MODELS = [
     color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
     inputCostPer1M: 0.70,
     outputCostPer1M: 0.90,
-    contextWindow: "128K"
+    contextWindow: "128K",
+    strength: "Open source con costo bajo; ideal para despliegue local o privado.",
+    weakness: "Requiere infraestructura propia para un rendimiento serio."
   },
   {
     id: "mistral-large",
@@ -50,7 +82,9 @@ const MODELS = [
     color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
     inputCostPer1M: 2.00,
     outputCostPer1M: 6.00,
-    contextWindow: "128K"
+    contextWindow: "128K",
+    strength: "Fuerte multilingüismo y eficiencia europea; buen equilibrio de capacidades.",
+    weakness: "Ecosistema de herramientas y comunidad menor que los líderes."
   },
   {
     id: "deepseek-v3",
@@ -60,7 +94,9 @@ const MODELS = [
     color: "bg-violet-500/20 text-violet-400 border-violet-500/30",
     inputCostPer1M: 0.14,
     outputCostPer1M: 0.28,
-    contextWindow: "64K"
+    contextWindow: "64K",
+    strength: "Costo ultrabajo (0.14/0.28 por millón) con calidad general sorprendente.",
+    weakness: "Ventana de contexto de 64K; ecosistema y soporte aún en maduración."
   }
 ];
 
@@ -75,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const optimizeBtn = document.getElementById('optimizeBtn');
   const copyBtn = document.getElementById('copyBtn');
   const clearBtn = document.getElementById('clearBtn');
-  const centralSwapCircle = document.getElementById('centralSwapCircle');
 
   const recommendationCard = document.getElementById('recommendationCard');
   const recommendationText = document.getElementById('recommendationText');
@@ -101,14 +136,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const recommendationsList = document.getElementById('recommendationsList');
   const metricsBreakdownContainer = document.getElementById('metricsBreakdownContainer');
 
-  // Models Grid
+  // Models Grid & Collapsible
   const modelsGrid = document.getElementById('modelsGrid');
+  const modelsToggleBtn = document.getElementById('modelsToggleBtn');
+  const modelsChevron = document.getElementById('modelsChevron');
+  const modelsCollapsible = document.getElementById('modelsCollapsible');
+  const modelAnalysisContainer = document.getElementById('modelAnalysisContainer');
 
-  let isRotated = false;
+  let isModelsOpen = false;
   let debounceTimer = null;
 
-  // Initial render of model cards
+  // Initial render of model cards and analysis
   renderModelComparisonCards();
+  renderModelAnalysis();
 
   // Orthography & Spelling Cleanup utility function
   function cleanOrthography(text) {
@@ -377,6 +417,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
   }
 
+  // Render Recommendations, Improvements and Weaknesses per model
+  function renderModelAnalysis() {
+    modelAnalysisContainer.innerHTML = MODELS.map(m => `
+      <div class="py-3 border-b border-slate-800/60 last:border-0">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-6 h-6 rounded-lg ${m.color} border flex items-center justify-center font-bold text-[10px]">${m.initial}</div>
+          <span class="font-bold text-sm text-white">${m.name}</span>
+          <span class="text-[11px] text-slate-400">${m.company}</span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-2.5 text-xs">
+          <div class="flex items-start gap-2">
+            <span class="shrink-0 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[10px] font-bold uppercase">Recomendación</span>
+            <span class="text-slate-300">${m.strength}</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="shrink-0 px-1.5 py-0.5 rounded bg-red-500/15 text-red-300 text-[10px] font-bold uppercase">Falencias</span>
+            <span class="text-slate-300">${m.weakness}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
   // Robust Contextual translation flow
   async function translateText() {
     const rawText = promptInput.value.trim();
@@ -422,25 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Swap content and languages (Central Circle)
-  function handleSwap() {
-    isRotated = !isRotated;
-    centralSwapCircle.style.transform = isRotated ? 'rotate(180deg)' : 'rotate(0deg)';
-
-    const tempText = promptInput.value;
-    promptInput.value = translatedTextOutput.value;
-    translatedTextOutput.value = tempText;
-
-    const tempLang = sourceLangSelect.value;
-    sourceLangSelect.value = targetLangSelect.value;
-    if (tempLang !== 'auto') {
-      targetLangSelect.value = tempLang;
-    }
-
-    updateStats(promptInput.value, true);
-    updateStats(translatedTextOutput.value, false);
-  }
-
   // Optimize prompt feature (isolated, does not touch translation)
   function optimizePrompt() {
     const text = promptInput.value.trim();
@@ -474,8 +518,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   translateBtn.addEventListener('click', translateText);
-  centralSwapCircle.addEventListener('click', handleSwap);
   optimizeBtn.addEventListener('click', optimizePrompt);
+
+  modelsToggleBtn.addEventListener('click', () => {
+    isModelsOpen = !isModelsOpen;
+    modelsCollapsible.classList.toggle('hidden', !isModelsOpen);
+    modelsChevron.style.transform = isModelsOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+    modelsToggleBtn.querySelector('span').textContent = isModelsOpen ? 'Ocultar comparación' : 'Ver comparación';
+  });
 
   copyBtn.addEventListener('click', () => {
     const textToCopy = translatedTextOutput.value || promptInput.value;
