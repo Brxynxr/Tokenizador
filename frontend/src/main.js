@@ -1,6 +1,8 @@
 import "./style.css";
 import { getEncoding } from "js-tiktoken";
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
+
 const MODELS = [
   {
     id: "gpt-4o",
@@ -551,6 +553,27 @@ document.addEventListener('DOMContentLoaded', () => {
     translateBtn.innerHTML = `<span>...</span>`;
 
     try {
+      // Try backend first so translation/token analysis stays centralized when the API is available.
+      const backendResponse = await fetch(`${BACKEND_URL}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: cleanedText,
+          source_lang: sourceLang,
+          target_lang: targetLang,
+          model_name: modelSelect.value
+        })
+      });
+
+      if (backendResponse.ok) {
+        const backendData = await backendResponse.json();
+        if (backendData?.translated_text) {
+          translatedTextOutput.value = backendData.translated_text.trim();
+          updateStats(translatedTextOutput.value, false);
+          return;
+        }
+      }
+
       // 2. Split the prompt preserving paragraphs and sentence boundaries
       const parts = splitForTranslation(cleanedText);
       const translatedParts = [];
@@ -766,21 +789,21 @@ ${taskLabel} ${text}
 ${formatPrompt}${guidance ? ' ' + guidance : ''}
 ${constraints}`;
 
-    if (scope === 'role') {
+    if (scope === 'reduce') {
+      return `${role}
+
+${isEs ? 'Objetivo:' : 'Objective:'} ${text}
+
+${isEs ? 'Reduce el prompt a lo esencial, elimina relleno y conserva solo la instrucción principal.' : 'Reduce the prompt to its essentials, remove fluff, and keep only the main instruction.'}
+${isEs ? 'Devuelve una versión compacta, clara y con menor consumo de tokens.' : 'Return a compact, clear version with lower token usage.'}`;
+    }
+
+    if (scope === 'specific') {
       return `${role}
 
 ${taskLabel} ${text}
 
-${isEs ? 'Prioriza responder con autoridad, claridad y precisión.' : 'Prioritize an authoritative, clear, and precise answer.'}
-${constraints}`;
-    }
-
-    if (scope === 'context') {
-      return `${role}
-
-${isEs ? 'Contexto ampliado:' : 'Expanded context:'} ${text}
-
-${isEs ? 'Conserva los detalles importantes y explica solo lo necesario.' : 'Preserve important details and explain only what is necessary.'}
+${isEs ? 'Haz la petición más precisa: añade contexto, objetivo final, criterios de éxito y restricciones.' : 'Make the request more precise: add context, final goal, success criteria, and constraints.'}
 ${constraints}`;
     }
 
@@ -882,9 +905,9 @@ ${constraints}`;
     const typeLabelMap = { code: 'Código', creative: 'Creativo', analysis: 'Análisis', data: 'Datos', general: 'Asistente IA' };
     const selectedScopeLabel = {
       all: 'Optimizar todo',
-      role: 'Rol y objetivo',
-      context: 'Contexto y detalle',
-      format: 'Formato y restricciones'
+      reduce: 'Reducir tokens',
+      specific: 'Más específico',
+      format: 'Mejor formato'
     }[scope] || 'Optimizar todo';
 
     const improvements = [
