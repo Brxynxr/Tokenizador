@@ -104,22 +104,12 @@
       background: #0d1120;
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 12px;
-      transition: all 0.25s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .model-card:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 6px 20px rgba(100,120,255,0.12);
-      border-color: rgba(255,255,255,0.15);
-    }
-    .accordion-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
-      opacity: 0;
-    }
-    .accordion-content.expanded {
-      max-height: 2500px;
-      opacity: 1;
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 10px 30px rgba(34,211,238,0.15);
+      border-color: rgba(34,211,238,0.3);
     }
   </style>
 </head>
@@ -187,7 +177,7 @@
           </div>
         </div>
 
-        <!-- Footer Stats Grid (5 columns: Chars, Words, Lines, Tokens, Temp) -->
+        <!-- Footer Stats Grid (5 columns) -->
         <div class="grid grid-cols-5 gap-1 pt-3 border-t border-slate-800/80 text-center">
           <div>
             <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Chars</div>
@@ -284,30 +274,34 @@
           </div>
         </div>
 
-        <!-- Footer Stats Grid (4 columns) -->
-        <div class="grid grid-cols-4 gap-1 pt-3 border-t border-slate-800/80 text-center">
+        <!-- Footer Stats Grid (5 columns: Chars, Words, Lines, Tokens, Temp) -->
+        <div class="grid grid-cols-5 gap-1 pt-3 border-t border-slate-800/80 text-center">
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Chars</div>
-            <div id="statTransChars" class="text-sm font-bold text-white">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Chars</div>
+            <div id="statTransChars" class="text-xs font-bold text-white">0</div>
           </div>
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Palabras</div>
-            <div id="statTransWords" class="text-sm font-bold text-white">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Palabras</div>
+            <div id="statTransWords" class="text-xs font-bold text-white">0</div>
           </div>
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Líneas</div>
-            <div id="statTransLines" class="text-sm font-bold text-white">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Líneas</div>
+            <div id="statTransLines" class="text-xs font-bold text-white">0</div>
           </div>
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Tokens</div>
-            <div id="statTransTokens" class="text-sm font-bold text-indigo-400">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Tokens</div>
+            <div id="statTransTokens" class="text-xs font-bold text-indigo-400">0</div>
+          </div>
+          <div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Temp</div>
+            <div id="statTransTemp" class="text-xs font-bold text-cyan-400">0.5</div>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- Recommendation Banner (Efficiency & Optimal Model/Language) -->
+    <!-- Recommendation Banner (Exact user message) -->
     <div id="recommendationCard" class="max-w-[1200px] mx-auto mt-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur hidden">
       <div class="flex items-center gap-4">
         <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
@@ -322,7 +316,7 @@
       </div>
     </div>
 
-    <!-- PANEL: Análisis del Prompt (2 blocks: Quality + 6 Metrics Breakdown) -->
+    <!-- PANEL: Análisis del Prompt (Quality + 6 Metrics Breakdown) -->
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
       <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
@@ -336,7 +330,7 @@
         <span class="text-xs text-slate-400 font-medium">Evaluación heurística en tiempo real</span>
       </div>
 
-      <!-- 2 Equal Columns Grid (Quality Circle + 6 Metrics Breakdown) -->
+      <!-- 2 Equal Columns Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         
         <!-- Block A: Círculo de calidad del prompt -->
@@ -381,10 +375,9 @@
       </div>
     </section>
 
-    <!-- SECCIÓN: Comparación de Modelos (Revertido a 6 tarjetas completas con estadísticas) -->
-    <section class="custom-card mt-8 max-w-[1200px] mx-auto overflow-hidden">
-      <!-- Header Colapsable -->
-      <div id="modelsAccordionHeader" class="p-6 cursor-pointer flex items-center justify-between select-none hover:bg-slate-900/30 transition-colors">
+    <!-- SECCIÓN: Comparación de Modelos (Visible directamente, sin acordeón, con animación hover) -->
+    <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
+      <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,19 +389,12 @@
             <p class="text-xs text-slate-400">Estadísticas de tokens, costos estimados y ventanas de contexto entre 6 LLMs principales</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hidden sm:inline-block">6 Modelos</span>
-          <svg id="accordionChevron" class="w-5 h-5 text-slate-400 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
-        </div>
+        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">6 Modelos</span>
       </div>
 
-      <!-- Contenido Acordeón (Grid de 6 Tarjetas) -->
-      <div id="modelsAccordionBody" class="accordion-content px-6 pb-6">
-        <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-          <!-- Tarjetas renderizadas dinámicamente por JS -->
-        </div>
+      <!-- Grid de 6 Tarjetas (Visible directamente) -->
+      <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+        <!-- Tarjetas renderizadas dinámicamente por JS -->
       </div>
     </section>
 

@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statTransWords = document.getElementById('statTransWords');
   const statTransLines = document.getElementById('statTransLines');
   const statTransTokens = document.getElementById('statTransTokens');
+  const statTransTemp = document.getElementById('statTransTemp');
 
   // Analysis panel elements
   const qualityProgressCircle = document.getElementById('qualityProgressCircle');
@@ -99,44 +100,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const recommendationsList = document.getElementById('recommendationsList');
   const metricsBreakdownContainer = document.getElementById('metricsBreakdownContainer');
 
-  // Models Accordion elements
-  const modelsAccordionHeader = document.getElementById('modelsAccordionHeader');
-  const modelsAccordionBody = document.getElementById('modelsAccordionBody');
-  const accordionChevron = document.getElementById('accordionChevron');
+  // Models Grid
   const modelsGrid = document.getElementById('modelsGrid');
 
   let isRotated = false;
-  let isAccordionOpen = false;
   let debounceTimer = null;
 
-  // Toggle Accordion
-  modelsAccordionHeader.addEventListener('click', () => {
-    isAccordionOpen = !isAccordionOpen;
-    if (isAccordionOpen) {
-      modelsAccordionBody.classList.add('expanded');
-      accordionChevron.style.transform = 'rotate(180deg)';
-      renderModelComparisonCards();
-    } else {
-      modelsAccordionBody.classList.remove('expanded');
-      accordionChevron.style.transform = 'rotate(0deg)';
-    }
-  });
+  // Initial render of model cards
+  renderModelComparisonCards();
 
   // Orthography & Spelling Cleanup utility function
   function cleanOrthography(text) {
     if (!text) return "";
     let cleaned = text
-      .replace(/\s+/g, ' ')                      // Multiple spaces to single space
-      .replace(/\s+([.,?!;:])/g, '$1')           // Remove space before punctuation
-      .replace(/([.,?!;:])([^\s])/g, '$1 $2')     // Ensure space after punctuation
+      .replace(/\s+/g, ' ')                      
+      .replace(/\s+([.,?!;:])/g, '$1')           
+      .replace(/([.,?!;:])([^\s])/g, '$1 $2')     
       .trim();
     
-    // Capitalize first letter of sentences
     cleaned = cleaned.replace(/(^\s*|[.!?]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
     return cleaned;
   }
 
-  // Calculate temperature based on prompt text
+  // Calculate temperature based on text
   function calculateTemperature(text) {
     if (!text || !text.trim()) return 0.5;
     const trimmed = text.toLowerCase();
@@ -164,39 +150,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Calculate stats for a given text
+  // Update stats for input or translated text
   function updateStats(text, isInput = true) {
     const chars = text.length;
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
     const modelName = modelSelect.value;
     const tokens = countTokens(text, modelName);
+    const temp = calculateTemperature(text);
 
     if (isInput) {
       statInputChars.textContent = chars;
       statInputWords.textContent = words;
       statInputLines.textContent = lines;
       statInputTokens.textContent = tokens;
-      
-      const temp = calculateTemperature(text);
       statInputTemp.textContent = temp.toFixed(1);
 
-      runPromptAnalysis(text, temp);
-      
-      if (isAccordionOpen) {
-        renderModelComparisonCards();
-      }
+      runPromptAnalysis(text);
+      renderModelComparisonCards();
     } else {
       statTransChars.textContent = chars;
       statTransWords.textContent = words;
       statTransLines.textContent = lines;
       statTransTokens.textContent = tokens;
+      statTransTemp.textContent = temp.toFixed(1);
     }
 
     checkEfficiency();
   }
 
-  // Efficiency & Optimal Model/Language Recommendation
+  // Efficiency recommendation with exact requested text
   function checkEfficiency() {
     const inputTokens = parseInt(statInputTokens.textContent) || 0;
     const transTokens = parseInt(statTransTokens.textContent) || 0;
@@ -206,25 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    let bestLang = "Español";
-    let bestModel = "DeepSeek V3";
-
-    if (transTokens < inputTokens) {
-      bestLang = "Inglés (Traducido)";
-    }
-
-    if (inputTokens > 5000) {
-      bestModel = "Gemini 1.5 Pro (por su ventana de contexto masiva)";
-    } else {
-      bestModel = "DeepSeek V3 (por su bajísimo costo y alta velocidad)";
-    }
-
-    recommendationText.textContent = `La manera más eficiente de mandar el prompt es usando ${bestLang} y el modelo ${bestModel}, ya que optimiza el consumo de tokens y reduce costos operacionales manteniendo alta precisión.`;
+    recommendationText.textContent = "Se recomienda procesar la consulta en Inglés (Traducido) mediante DeepSeek V3. Esta combinación ofrece el balance óptimo entre latencia ultra baja, reducción drástica en el consumo de tokens y un costo operacional mínimo sin sacrificar precisión.";
     recommendationCard.classList.remove('hidden');
   }
 
   // Prompt Analysis Heuristics & 6 Breakdown Metrics
-  function runPromptAnalysis(text, temp) {
+  function runPromptAnalysis(text) {
     if (!text || !text.trim()) {
       qualityScoreNum.textContent = "0/100";
       qualityProgressCircle.style.strokeDashoffset = "251.2";
@@ -245,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const words = trimmed.split(/\s+/).length;
     const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
 
-    // 6 Metrics Calculation
     let clarityScore = Math.min(20, Math.max(5, words >= 10 && sentences >= 1 ? 20 : 10));
     const contextKeywords = /(ejemplo|contexto|caso|situación|escenario|basado en|dado que)/i;
     let contextScore = contextKeywords.test(trimmed) ? 18 : 6;
@@ -323,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  // Render Model Comparison Cards (Reverted to 6 full model cards)
+  // Render Model Comparison Cards (Directly visible with hover animation)
   function renderModelComparisonCards() {
     const inputTokens = parseInt(statInputTokens.textContent) || 0;
     const assumedOutputTokens = 500;
@@ -352,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let maxContextId = "gemini-1-5-pro";
 
-    modelsGrid.innerHTML = evaluatedModels.map((m, index) => {
+    modelsGrid.innerHTML = evaluatedModels.map((m) => {
       const isCheapest = m.id === cheapestId;
       const isLargestContext = m.id === maxContextId;
 
@@ -360,10 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isCheapest) borderClass = "border-emerald-500/50 shadow-lg shadow-emerald-500/10";
 
       return `
-        <div class="model-card p-4 flex flex-col justify-between opacity-0 translate-y-3 transition-all duration-300 ${borderClass}" 
-             style="transition-delay: ${index * 50}ms;"
-             id="model-card-${m.id}"
-        >
+        <div class="model-card p-4 flex flex-col justify-between ${borderClass}">
           <div>
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-2.5">
@@ -408,18 +374,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     }).join('');
-
-    setTimeout(() => {
-      evaluatedModels.forEach((m) => {
-        const el = document.getElementById(`model-card-${m.id}`);
-        if (el) {
-          el.classList.remove('opacity-0', 'translate-y-3');
-        }
-      });
-    }, 20);
   }
 
-  // Contextual translation with Orthography Cleanup flow
+  // Robust Contextual translation with Orthography Cleanup flow
   async function translateText() {
     const rawText = promptInput.value.trim();
     if (!rawText) {
@@ -434,6 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sourceLang = sourceLangSelect.value;
     const targetLang = targetLangSelect.value;
+    // MyMemory accepts langpair like es|en or en|fr, or autodetect|en if source is auto
     const langPair = sourceLang === 'auto' ? `autodetect|${targetLang}` : `${sourceLang}|${targetLang}`;
 
     translateBtn.disabled = true;
@@ -441,22 +399,24 @@ document.addEventListener('DOMContentLoaded', () => {
     translateBtn.innerHTML = `<span>...</span>`;
 
     try {
-      // 2. Fast translation of cleaned prompt
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanedText)}&langpair=${langPair}`;
       const res = await fetch(url);
       const data = await res.json();
 
-      if (data && data.responseData && data.responseData.translatedText) {
+      if (data && data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+        const translated = data.responseData.translatedText;
+        translatedTextOutput.value = translated;
+        updateStats(translated, false);
+      } else if (data && data.responseData && data.responseData.translatedText) {
         const translated = data.responseData.translatedText;
         translatedTextOutput.value = translated;
         updateStats(translated, false);
       } else {
-        translatedTextOutput.value = cleanedText;
-        updateStats(cleanedText, false);
+        throw new Error("Respuesta inválida del servicio de traducción.");
       }
     } catch (e) {
       console.error("Translation error:", e);
-      alert('Error al realizar la traducción.');
+      alert('No se pudo completar la traducción en línea. Asegúrate de tener conexión a internet.');
     } finally {
       translateBtn.disabled = false;
       translateBtn.innerHTML = origHTML;
@@ -556,8 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStats('', true);
     updateStats('', false);
     recommendationCard.classList.add('hidden');
-    if (isAccordionOpen) {
-      renderModelComparisonCards();
-    }
+    renderModelComparisonCards();
   });
 });
