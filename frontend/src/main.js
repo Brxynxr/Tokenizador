@@ -506,6 +506,125 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Detect the prompt language based on the source selector or text markers
+  function detectLanguage(text) {
+    const sourceLang = sourceLangSelect.value;
+    if (sourceLang === 'es' || sourceLang === 'en') return sourceLang;
+    const spanishMarkers = /[áéíóúñ¿¡]|(^|\s)(el|la|los|las|de|y|que|una|un|para|con|como|es|del)\s/i;
+    return spanishMarkers.test(text) ? 'es' : 'en';
+  }
+
+  // Analyze prompt content to build a dynamic optimization
+  function analyzePrompt(text) {
+    const lower = text.toLowerCase();
+    const analysis = {
+      type: 'general',
+      formats: [],
+      tone: null,
+      audience: null
+    };
+
+    const typeMap = [
+      { type: 'code', pattern: /(código|codigo|función|funcion|script|programa|programar|bug|api|algoritmo|clase|sql|json|desarrolla|debug)/i },
+      { type: 'creative', pattern: /(historia|poema|cuento|crea|escribe|inventa|imagina|narrativa|ficción|ficcion|story|poem|creative)/i },
+      { type: 'analysis', pattern: /(analiza|resume|explica|compara|evalúa|evalua|revisa|interpreta|sintetiza)/i },
+      { type: 'data', pattern: /(datos|data|sql|json|csv|tabla|tablas|dataset|estadística|estadistica)/i }
+    ];
+    for (const t of typeMap) {
+      if (t.pattern.test(lower)) {
+        analysis.type = t.type;
+        break;
+      }
+    }
+
+    const formatPatterns = [
+      { name: 'lista', pattern: /(lista|viñetas|viñeta|bullets|bullets list|list)/i },
+      { name: 'tabla', pattern: /(tabla|table)/i },
+      { name: 'json', pattern: /(json)/i },
+      { name: 'código', pattern: /(código|codigo|code)/i },
+      { name: 'markdown', pattern: /(markdown)/i },
+      { name: 'resumen', pattern: /(resumen|resume|summary)/i },
+      { name: 'pasos', pattern: /(pasos|steps|guía|guia|tutorial)/i }
+    ];
+    analysis.formats = formatPatterns.filter(f => f.pattern.test(lower)).map(f => f.name);
+
+    if (/(tono formal|formal|profesional)/i.test(lower)) analysis.tone = 'formal';
+    if (/(tono casual|casual|amigable|informal)/i.test(lower)) analysis.tone = 'casual';
+
+    if (/(principiante|básico|basico|nivel inicial)/i.test(lower)) analysis.audience = 'principiante';
+    if (/(experto|avanzado|profesional)/i.test(lower)) analysis.audience = 'experto';
+
+    return analysis;
+  }
+
+  // Build the optimized prompt dynamically in the detected language
+  function buildOptimizedPrompt(text, lang) {
+    const analysis = analyzePrompt(text);
+    const isEs = lang === 'es';
+
+    const roleByType = {
+      code: isEs
+        ? 'Actúa como un ingeniero de software senior experto en arquitectura limpia, eficiencia y buenas prácticas.'
+        : 'Act as a senior software engineer expert in clean architecture, efficiency, and best practices.',
+      creative: isEs
+        ? 'Actúa como un escritor creativo profesional con un estilo vívido, preciso y cautivador.'
+        : 'Act as a professional creative writer with a vivid, precise, and captivating style.',
+      analysis: isEs
+        ? 'Actúa como un analista riguroso que estructura información compleja con claridad y profundidad.'
+        : 'Act as a rigorous analyst who structures complex information with clarity and depth.',
+      data: isEs
+        ? 'Actúa como un analista de datos experto en SQL, JSON y visualización de información.'
+        : 'Act as a data analyst expert in SQL, JSON, and data visualization.',
+      general: isEs
+        ? 'Actúa como un asistente experto de alto rendimiento con respuestas detalladas y bien estructuradas.'
+        : 'Act as a high-performance expert assistant with detailed, well-structured responses.'
+    };
+
+    const formatNames = {
+      lista: isEs ? 'lista con viñetas' : 'bullet list',
+      tabla: isEs ? 'tabla' : 'table',
+      json: 'JSON',
+      código: isEs ? 'código limpio y comentado' : 'clean, commented code',
+      markdown: 'Markdown',
+      resumen: isEs ? 'resumen conciso' : 'concise summary',
+      pasos: isEs ? 'pasos numerados' : 'numbered steps'
+    };
+    const formatPrompt = analysis.formats.length
+      ? (isEs
+        ? `Formato de salida: ${analysis.formats.map(f => formatNames[f] || f).join(', ')}.`
+        : `Output format: ${analysis.formats.map(f => formatNames[f] || f).join(', ')}.`)
+      : (isEs
+        ? 'Proporciona una respuesta clara, precisa y bien estructurada.'
+        : 'Provide a clear, precise, and well-structured response.');
+
+    const tonePrompt = analysis.tone === 'formal'
+      ? (isEs ? 'Usa un tono formal y profesional. ' : 'Use a formal and professional tone. ')
+      : analysis.tone === 'casual'
+        ? (isEs ? 'Usa un tono amigable y casual. ' : 'Use a friendly and casual tone. ')
+        : '';
+
+    const audiencePrompt = analysis.audience === 'principiante'
+      ? (isEs ? 'Explica en términos sencillos para principiantes. ' : 'Explain in simple terms for beginners. ')
+      : analysis.audience === 'experto'
+        ? (isEs ? 'Dirígete a un público experto y evita explicaciones básicas. ' : 'Address an expert audience and avoid basic explanations. ')
+        : '';
+
+    const constraints = isEs
+      ? 'Restricciones: sé preciso y basado en hechos; si falta información, indícalo explícitamente en lugar de inventar. Entrega la respuesta en el idioma del prompt.'
+      : 'Constraints: be precise and factual; if information is missing, say so explicitly instead of inventing. Deliver the response in the language of the prompt.';
+
+    const role = roleByType[analysis.type];
+    const taskLabel = isEs ? 'Tarea:' : 'Task:';
+    const guidance = (tonePrompt + audiencePrompt).trim();
+
+    return `${role}
+
+${taskLabel} ${text}
+
+${formatPrompt}${guidance ? ' ' + guidance : ''}
+${constraints}`;
+  }
+
   // Optimize prompt feature (isolated, does not touch translation)
   function optimizePrompt() {
     const text = promptInput.value.trim();
@@ -514,8 +633,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const optimized = `Act as an expert AI assistant. Provide a highly detailed, accurate, and well-structured response for the following objective:\n\n${text}\n\nEnsure clarity, precision, and actionable insights.`;
-    const cleaned = cleanOrthography(optimized);
+    const lang = detectLanguage(text);
+    const optimized = buildOptimizedPrompt(text, lang);
+    const cleaned = optimized
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\s*\n\s*/g, '\n')
+      .trim();
     promptInput.value = cleaned;
     updateStats(cleaned, true);
   }
