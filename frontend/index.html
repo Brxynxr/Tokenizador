@@ -117,26 +117,30 @@
   
   <div class="radial-glow"></div>
 
-  <!-- Header / Navbar -->
-  <header class="border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <!-- Header / Navbar Mejorado -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-black/20">
+    <div class="max-w-[1200px] mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
           </svg>
         </div>
-        <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PromptToken AI</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <select id="modelSelect" class="bg-[#1a2035] border border-slate-700/60 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 cursor-pointer">
-          <option value="cl100k_base">Modelo: GPT-4 / GPT-3.5 (cl100k_base)</option>
-          <option value="p50k_base">Modelo: GPT-3 (p50k_base)</option>
-          <option value="r50k_base">Modelo: GPT-2 / DaVinci (r50k_base)</option>
-        </select>
-        <div class="text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hidden sm:block">
-          Sin APIs de pago • 100% Modular
+        <div>
+          <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">PromptToken AI</span>
+          <span class="block text-[10px] text-cyan-400 font-semibold tracking-wider uppercase">Optimizador & Traductor de LLMs</span>
         </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-2 bg-[#12172a] border border-slate-700/60 rounded-xl px-3 py-1.5 shadow-inner">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xs text-slate-300 font-medium">Motor Local Activo</span>
+        </div>
+        <select id="modelSelect" class="bg-[#12172a] border border-slate-700/60 text-slate-200 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-md">
+          <option value="cl100k_base">Tokenizador: GPT-4 / GPT-3.5 (cl100k_base)</option>
+          <option value="p50k_base">Tokenizador: GPT-3 (p50k_base)</option>
+          <option value="r50k_base">Tokenizador: GPT-2 / DaVinci (r50k_base)</option>
+        </select>
       </div>
     </div>
   </header>
@@ -202,7 +206,7 @@
         </div>
       </div>
 
-      <!-- 2. Columna central de controles (Icon-only) -->
+      <!-- 2. Columna central de controles -->
       <div class="flex flex-col items-center justify-center gap-3">
         
         <!-- Ícono central circular con anillo neón (Swap) -->
@@ -274,7 +278,7 @@
           </div>
         </div>
 
-        <!-- Footer Stats Grid (5 columns: Chars, Words, Lines, Tokens, Temp) -->
+        <!-- Footer Stats Grid (5 columns) -->
         <div class="grid grid-cols-5 gap-1 pt-3 border-t border-slate-800/80 text-center">
           <div>
             <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Chars</div>
@@ -316,7 +320,7 @@
       </div>
     </div>
 
-    <!-- PANEL: Análisis del Prompt (Quality + 6 Metrics Breakdown) -->
+    <!-- PANEL: Análisis del Prompt -->
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
       <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
@@ -375,7 +379,7 @@
       </div>
     </section>
 
-    <!-- SECCIÓN: Comparación de Modelos (Visible directamente, sin acordeón, con animación hover) -->
+    <!-- SECCIÓN: Comparación de Modelos -->
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
       <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-3">
@@ -392,7 +396,7 @@
         <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">6 Modelos</span>
       </div>
 
-      <!-- Grid de 6 Tarjetas (Visible directamente) -->
+      <!-- Grid de 6 Tarjetas -->
       <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
         <!-- Tarjetas renderizadas dinámicamente por JS -->
       </div>
