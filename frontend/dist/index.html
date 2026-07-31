@@ -96,7 +96,7 @@
       transform: scale(0.97) !important;
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BnoiLj9Q.js"></script>
+  <script type="module" crossorigin src="/assets/index-BoAQTjCC.js"></script>
 </head>
 <body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
   
@@ -127,7 +127,7 @@
   </header>
 
   <!-- Main Content Area: 3 Columns Grid -->
-  <main class="max-w-[1200px] mx-auto px-6 py-10 flex-grow w-full z-10 flex items-center">
+  <main class="max-w-[1200px] mx-auto px-6 py-10 flex-grow w-full z-10">
     
     <div class="w-full grid grid-cols-1 lg:grid-cols-[1fr,200px,1fr] gap-6 items-center">
       
@@ -189,8 +189,8 @@
       <!-- 2. Columna central de controles (~16%) -->
       <div class="flex flex-col items-center justify-center gap-4 py-4 lg:py-0">
         
-        <!-- Ícono central circular con anillo neón -->
-        <div id="centralIconCircle" class="neon-ring w-16 h-16 flex items-center justify-center shadow-xl cursor-pointer transition-transform duration-400 ease-in-out hover:scale-105">
+        <!-- Ícono central circular con anillo neón (Swap de contenido y lenguajes) -->
+        <div id="centralSwapCircle" title="Intercambiar contenidos y idiomas" class="neon-ring w-16 h-16 flex items-center justify-center shadow-xl cursor-pointer transition-transform duration-400 ease-in-out hover:scale-105">
           <svg class="w-7 h-7 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
           </svg>
@@ -205,7 +205,7 @@
             Optimizar Prompt
           </button>
 
-          <!-- Botón Traducir -->
+          <!-- Botón Traducir (Dispara la traducción real) -->
           <button id="translateBtn" class="btn-translate text-white font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
             <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
@@ -288,20 +288,108 @@
 
     </div>
 
-    <!-- Recommendation Banner -->
-    <div id="recommendationCard" class="max-w-[1200px] mx-auto mt-8 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur hidden">
+    <!-- Recommendation Banner (Efficiency) -->
+    <div id="recommendationCard" class="max-w-[1200px] mx-auto mt-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur hidden">
       <div class="flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
         </div>
         <div>
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Análisis de Eficiencia</h3>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Análisis de Eficiencia de Tokens</h3>
           <p id="recommendationText" class="text-sm text-slate-200"></p>
         </div>
       </div>
     </div>
+
+    <!-- NUEVO PANEL: Análisis del Prompt (Full Width) -->
+    <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
+      <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+          <h2 class="font-bold text-base text-white">Análisis Inteligente del Prompt</h2>
+        </div>
+        <span class="text-xs text-slate-400 font-medium">Evaluación heurística en tiempo real</span>
+      </div>
+
+      <!-- 3 Blocks in Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        
+        <!-- Block A: Círculo de calidad del prompt -->
+        <div class="bg-[#0d1120] border border-slate-800/80 rounded-xl p-5 flex flex-col items-center justify-center text-center">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Calidad del Prompt</span>
+          
+          <div class="relative w-28 h-28 flex items-center justify-center my-2">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" stroke="#1e2640" stroke-width="8" fill="none" />
+              <circle id="qualityProgressCircle" cx="50" cy="50" r="40" stroke="url(#qualityGradient)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" fill="none" class="transition-all duration-500 ease-out" />
+              <defs>
+                <linearGradient id="qualityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#22d3ee" />
+                  <stop offset="100%" stop-color="#a855f7" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="qualityScoreNum" class="text-2xl font-extrabold text-white">0/100</span>
+            </div>
+          </div>
+
+          <p id="qualityScoreLabel" class="text-xs font-medium text-slate-400 mt-2 px-2">
+            Escribe tu prompt para evaluar la calidad.
+          </p>
+        </div>
+
+        <!-- Block B: Gauge de temperatura sugerida -->
+        <div class="bg-[#0d1120] border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Temperatura Sugerida</span>
+              <span id="tempValueBadge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">0.5</span>
+            </div>
+            <p id="tempExplanation" class="text-xs text-slate-300 leading-relaxed min-h-[36px]">
+              Analizando el tono y la intención del prompt...
+            </p>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-800/60">
+            <!-- Range Bar -->
+            <div class="relative w-full bg-slate-800 h-2 rounded-full mb-3">
+              <div id="tempIndicatorDot" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-slate-900 shadow-md transition-all duration-300 left-[50%]"></div>
+            </div>
+            <!-- Labels -->
+            <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+              <span>Preciso (0.1)</span>
+              <span>Balanceado (0.5)</span>
+              <span>Creativo (1.0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Block C: Lista de recomendaciones y sugerencias -->
+        <div class="bg-[#0d1120] border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-3">Recomendaciones & Tips</span>
+            <ul id="recommendationsList" class="space-y-2.5 text-xs text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-slate-500">•</span>
+                <span>Escribe tu prompt para recibir sugerencias de mejora en tiempo real.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Optimización de LLM</span>
+            <span class="text-indigo-400 font-medium">PromptToken AI v2.0</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
 
   </main>
 

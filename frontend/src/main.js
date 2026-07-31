@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const optimizeBtn = document.getElementById('optimizeBtn');
   const copyBtn = document.getElementById('copyBtn');
   const clearBtn = document.getElementById('clearBtn');
-  const centralIconCircle = document.getElementById('centralIconCircle');
+  const centralSwapCircle = document.getElementById('centralSwapCircle');
 
   const recommendationCard = document.getElementById('recommendationCard');
   const recommendationText = document.getElementById('recommendationText');
@@ -26,6 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const statTransWords = document.getElementById('statTransWords');
   const statTransLines = document.getElementById('statTransLines');
   const statTransTokens = document.getElementById('statTransTokens');
+
+  // Analysis panel elements
+  const qualityProgressCircle = document.getElementById('qualityProgressCircle');
+  const qualityScoreNum = document.getElementById('qualityScoreNum');
+  const qualityScoreLabel = document.getElementById('qualityScoreLabel');
+  const tempValueBadge = document.getElementById('tempValueBadge');
+  const tempExplanation = document.getElementById('tempExplanation');
+  const tempIndicatorDot = document.getElementById('tempIndicatorDot');
+  const recommendationsList = document.getElementById('recommendationsList');
 
   let isRotated = false;
 
@@ -58,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
       statInputWords.textContent = words;
       statInputLines.textContent = lines;
       statInputTokens.textContent = tokens;
+      // Run prompt analysis whenever input changes
+      runPromptAnalysis(text);
     } else {
       statTransChars.textContent = chars;
       statTransWords.textContent = words;
@@ -92,6 +103,125 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Prompt Analysis Heuristics
+  function runPromptAnalysis(text) {
+    if (!text || !text.trim()) {
+      qualityScoreNum.textContent = "0/100";
+      qualityProgressCircle.style.strokeDashoffset = "251.2";
+      qualityScoreLabel.textContent = "Escribe tu prompt para evaluar la calidad.";
+      qualityScoreLabel.className = "text-xs font-medium text-slate-400 mt-2 px-2";
+      
+      tempValueBadge.textContent = "0.5";
+      tempExplanation.textContent = "Analizando el tono y la intención del prompt...";
+      tempIndicatorDot.style.left = "50%";
+      
+      recommendationsList.innerHTML = `
+        <li class="flex items-start gap-2">
+          <span class="text-slate-500">•</span>
+          <span>Escribe tu prompt para recibir sugerencias de mejora en tiempo real.</span>
+        </li>
+      `;
+      return;
+    }
+
+    const trimmed = text.trim();
+    const words = trimmed.split(/\s+/).length;
+    const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
+
+    // Heuristics scoring (0 to 100)
+    let score = 50;
+
+    // 1. Length factor
+    if (words < 8) score -= 25;
+    else if (words < 15) score -= 10;
+    else if (words >= 20 && words <= 200) score += 20;
+    else if (words > 350) score -= 10;
+
+    // 2. Action verbs / instruction presence
+    const actionVerbs = /(actúa|explica|genera|analiza|escribe|resume|diseña|crea|traduce|resuelve|ayúdame|cuál|cómo|desarrolla|programa)/i;
+    if (actionVerbs.test(trimmed)) score += 15;
+
+    // 3. Context / examples
+    const contextKeywords = /(ejemplo|contexto|caso|situación|escenario|basado en|dado que)/i;
+    if (contextKeywords.test(trimmed)) score += 10;
+
+    // 4. Specificity / constraints (format, tone, audience)
+    const constraintKeywords = /(formato|lista|tabla|json|código|markdown|tono|público|experto|principiante|restríngete|máximo|palabras|estricto)/i;
+    if (constraintKeywords.test(trimmed)) score += 15;
+
+    // 5. Structure (multiple sentences)
+    if (sentences >= 2) score += 10;
+
+    // Clamp score between 0 and 100
+    score = Math.max(0, Math.min(100, score));
+
+    // Update Quality Circle UI
+    qualityScoreNum.textContent = `${score}/100`;
+    const circumference = 251.2;
+    const offset = circumference - (score / 100) * circumference;
+    qualityProgressCircle.style.strokeDashoffset = offset;
+
+    if (score <= 40) {
+      qualityScoreLabel.textContent = "Prompt débil, necesita más contexto";
+      qualityScoreLabel.className = "text-xs font-medium text-[#f87171] mt-2 px-2";
+    } else if (score <= 70) {
+      qualityScoreLabel.textContent = "Prompt aceptable, puede mejorar";
+      qualityScoreLabel.className = "text-xs font-medium text-[#fb923c] mt-2 px-2";
+    } else {
+      qualityScoreLabel.textContent = "Prompt claro y bien estructurado";
+      qualityScoreLabel.className = "text-xs font-medium text-[#4ade80] mt-2 px-2";
+    }
+
+    // Temperature Heuristics
+    let temp = 0.5;
+    const creativeWords = /(historia|poema|brainstorm|ideas|ficción|crear|inventa|narrativa|cuento|imagina|creativo)/i;
+    const technicalWords = /(código|datos|exacto|preciso|función|api|sql|bug|calcular|fórmula|matemáticas|analiza|técnico|json|script)/i;
+
+    if (creativeWords.test(trimmed)) {
+      temp = 0.85;
+      tempExplanation.textContent = "Detecté lenguaje creativo/narrativo o de ideación, se sugiere temperatura alta.";
+    } else if (technicalWords.test(trimmed)) {
+      temp = 0.2;
+      tempExplanation.textContent = "Prompt técnico, analítico o factual, se sugiere temperatura baja para mayor precisión.";
+    } else {
+      temp = 0.5;
+      tempExplanation.textContent = "Prompt general o balanceado, se sugiere temperatura neutra (0.5).";
+    }
+
+    tempValueBadge.textContent = temp.toFixed(1);
+    const percent = temp * 100;
+    tempIndicatorDot.style.left = `${percent}%`;
+
+    // Recommendations Generation
+    const recs = [];
+    if (words < 15) {
+      recs.push("Agrega más contexto o detalle para obtener mejores resultados.");
+    }
+    const formatKeywords = /(lista|tabla|json|código|markdown|esquema|viñetas)/i;
+    if (!formatKeywords.test(trimmed)) {
+      recs.push("Especifica el formato de salida deseado (lista, tabla, código, JSON, etc.).");
+    }
+    const toneKeywords = /(tono|audiencia|experto|principiante|formal|casual|profesional)/i;
+    if (!toneKeywords.test(trimmed)) {
+      recs.push("Indica el tono o la audiencia objetivo (ej: profesional, para principiantes).");
+    }
+    const exampleKeywords = /(ejemplo|caso)/i;
+    if (!exampleKeywords.test(trimmed) && words > 15) {
+      recs.push("Considera pedir ejemplos prácticos para guiar mejor al modelo.");
+    }
+
+    if (score >= 75 && recs.length === 0) {
+      recs.push("¡Excelente prompt! Está muy bien estructurado y es claro.");
+    }
+
+    recommendationsList.innerHTML = recs.map(rec => `
+      <li class="flex items-start gap-2">
+        <span class="text-indigo-400">💡</span>
+        <span>${rec}</span>
+      </li>
+    `).join('');
+  }
+
   // Contextual translation using free public API
   async function translateText() {
     const text = promptInput.value.trim();
@@ -107,10 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     translateBtn.disabled = true;
     const origHTML = translateBtn.innerHTML;
     translateBtn.innerHTML = `<span>Traduciendo...</span>`;
-
-    // Rotate central icon
-    isRotated = !isRotated;
-    centralIconCircle.style.transform = isRotated ? 'rotate(180deg)' : 'rotate(0deg)';
 
     try {
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
@@ -134,6 +260,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Swap content and languages (Central Circle)
+  function handleSwap() {
+    isRotated = !isRotated;
+    centralSwapCircle.style.transform = isRotated ? 'rotate(180deg)' : 'rotate(0deg)';
+
+    // Swap textareas
+    const tempText = promptInput.value;
+    promptInput.value = translatedTextOutput.value;
+    translatedTextOutput.value = tempText;
+
+    // Swap languages
+    const tempLang = sourceLangSelect.value;
+    sourceLangSelect.value = targetLangSelect.value;
+    if (tempLang !== 'auto') {
+      targetLangSelect.value = tempLang;
+    }
+
+    // Recalculate stats for both
+    updateStats(promptInput.value, true);
+    updateStats(translatedTextOutput.value, false);
+  }
+
   // Optimize prompt feature
   async function optimizePrompt() {
     const text = promptInput.value.trim();
@@ -147,12 +295,11 @@ document.addEventListener('DOMContentLoaded', () => {
     optimizeBtn.innerHTML = `<span>Optimizando...</span>`;
 
     try {
-      // Professional prompt engineering enhancement heuristic / structure
       const optimized = `Act as an expert AI assistant. Provide a highly detailed, accurate, and well-structured response for the following objective:\n\n${text}\n\nEnsure clarity, precision, and actionable insights.`;
       promptInput.value = optimized;
       updateStats(optimized, true);
 
-      // Automatically translate the optimized prompt
+      // Automatically translate
       await translateText();
     } catch (e) {
       console.error("Optimization error:", e);
@@ -162,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Event Listeners for real-time stats
+  // Event Listeners for real-time stats & analysis
   promptInput.addEventListener('input', (e) => {
     updateStats(e.target.value, true);
   });
@@ -177,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   translateBtn.addEventListener('click', translateText);
-  centralIconCircle.addEventListener('click', translateText);
+  centralSwapCircle.addEventListener('click', handleSwap);
   optimizeBtn.addEventListener('click', optimizePrompt);
 
   copyBtn.addEventListener('click', () => {
