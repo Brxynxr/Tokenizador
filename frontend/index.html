@@ -100,15 +100,16 @@
     button:active {
       transform: scale(0.95) !important;
     }
-    .model-mini-card {
+    .model-card {
       background: #0d1120;
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 12px;
       transition: all 0.25s ease;
     }
-    .model-mini-card:hover {
-      border-color: rgba(255,255,255,0.2);
-      transform: translateY(-1px);
+    .model-card:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 20px rgba(100,120,255,0.12);
+      border-color: rgba(255,255,255,0.15);
     }
     .accordion-content {
       max-height: 0;
@@ -150,7 +151,7 @@
     </div>
   </header>
 
-  <!-- Main Content Area: Side-by-Side 3 Columns Grid (Always side-by-side) -->
+  <!-- Main Content Area: Side-by-Side 3 Columns Grid -->
   <main class="max-w-[1200px] mx-auto px-6 py-10 flex-grow w-full z-10">
     
     <div class="w-full grid grid-cols-[1fr,150px,1fr] gap-4 items-center">
@@ -175,7 +176,7 @@
             </div>
           </div>
 
-          <!-- Textarea container (No 'G' badge) -->
+          <!-- Textarea container -->
           <div class="relative mb-4">
             <textarea 
               id="promptInput" 
@@ -186,31 +187,35 @@
           </div>
         </div>
 
-        <!-- Footer Stats Grid (4 columns) -->
-        <div class="grid grid-cols-4 gap-1 pt-3 border-t border-slate-800/80 text-center">
+        <!-- Footer Stats Grid (5 columns: Chars, Words, Lines, Tokens, Temp) -->
+        <div class="grid grid-cols-5 gap-1 pt-3 border-t border-slate-800/80 text-center">
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Chars</div>
-            <div id="statInputChars" class="text-sm font-bold text-white">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Chars</div>
+            <div id="statInputChars" class="text-xs font-bold text-white">0</div>
           </div>
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Palabras</div>
-            <div id="statInputWords" class="text-sm font-bold text-white">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Palabras</div>
+            <div id="statInputWords" class="text-xs font-bold text-white">0</div>
           </div>
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Líneas</div>
-            <div id="statInputLines" class="text-sm font-bold text-white">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Líneas</div>
+            <div id="statInputLines" class="text-xs font-bold text-white">0</div>
           </div>
           <div>
-            <div class="text-[10px] text-[#8b92a8] uppercase font-medium mb-0.5">Tokens</div>
-            <div id="statInputTokens" class="text-sm font-bold text-indigo-400">0</div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Tokens</div>
+            <div id="statInputTokens" class="text-xs font-bold text-indigo-400">0</div>
+          </div>
+          <div>
+            <div class="text-[9px] text-[#8b92a8] uppercase font-medium mb-0.5">Temp</div>
+            <div id="statInputTemp" class="text-xs font-bold text-cyan-400">0.5</div>
           </div>
         </div>
       </div>
 
-      <!-- 2. Columna central de controles (Icon-only buttons) -->
+      <!-- 2. Columna central de controles (Icon-only) -->
       <div class="flex flex-col items-center justify-center gap-3">
         
-        <!-- Ícono central circular con anillo neón (Swap de contenido y lenguajes) -->
+        <!-- Ícono central circular con anillo neón (Swap) -->
         <div id="centralSwapCircle" title="Intercambiar contenidos e idiomas" class="neon-ring w-14 h-14 flex items-center justify-center shadow-xl cursor-pointer transition-transform duration-400 ease-in-out hover:scale-105 flex-shrink-0">
           <svg class="w-6 h-6 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
@@ -268,7 +273,7 @@
             </div>
           </div>
 
-          <!-- Textarea container (No 'G' badge) -->
+          <!-- Textarea container -->
           <div class="relative mb-4">
             <textarea 
               id="translatedTextOutput" 
@@ -302,7 +307,7 @@
 
     </div>
 
-    <!-- Recommendation Banner (Efficiency) -->
+    <!-- Recommendation Banner (Efficiency & Optimal Model/Language) -->
     <div id="recommendationCard" class="max-w-[1200px] mx-auto mt-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur hidden">
       <div class="flex items-center gap-4">
         <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
@@ -311,13 +316,13 @@
           </svg>
         </div>
         <div>
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Análisis de Eficiencia de Tokens</h3>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Análisis de Eficiencia Óptima</h3>
           <p id="recommendationText" class="text-sm text-slate-200"></p>
         </div>
       </div>
     </div>
 
-    <!-- PANEL: Análisis del Prompt (Con 6 métricas desglosadas) -->
+    <!-- PANEL: Análisis del Prompt (2 blocks: Quality + 6 Metrics Breakdown) -->
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
       <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
@@ -331,8 +336,8 @@
         <span class="text-xs text-slate-400 font-medium">Evaluación heurística en tiempo real</span>
       </div>
 
-      <!-- Grid: Calidad + Temperatura + Desglose 6 Métricas -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <!-- 2 Equal Columns Grid (Quality Circle + 6 Metrics Breakdown) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         
         <!-- Block A: Círculo de calidad del prompt -->
         <div class="bg-[#0d1120] border border-slate-800/80 rounded-xl p-5 flex flex-col items-center justify-center text-center">
@@ -359,38 +364,11 @@
           </p>
         </div>
 
-        <!-- Block B: Gauge de temperatura sugerida -->
-        <div class="bg-[#0d1120] border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Temperatura Sugerida</span>
-              <span id="tempValueBadge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">0.5</span>
-            </div>
-            <p id="tempExplanation" class="text-xs text-slate-300 leading-relaxed min-h-[36px]">
-              Analizando el tono y la intención del prompt...
-            </p>
-          </div>
-
-          <div class="mt-4 pt-4 border-t border-slate-800/65">
-            <!-- Range Bar -->
-            <div class="relative w-full bg-slate-800 h-2 rounded-full mb-3">
-              <div id="tempIndicatorDot" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-slate-900 shadow-md transition-all duration-300 left-[50%]"></div>
-            </div>
-            <!-- Labels -->
-            <div class="flex justify-between text-[11px] text-slate-400 font-medium">
-              <span>Preciso (0.1)</span>
-              <span>Balanceado (0.5)</span>
-              <span>Creativo (1.0)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Block C: Desglose de las 6 Métricas de Calidad -->
+        <!-- Block B: Desglose de las 6 Métricas de Calidad -->
         <div class="bg-[#0d1120] border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-3">Desglose de Métricas (6)</span>
             <div id="metricsBreakdownContainer" class="space-y-2.5 text-xs text-slate-300">
-              <!-- Rendered dynamically -->
               <div class="text-slate-500 text-center py-4">Esperando prompt...</div>
             </div>
           </div>
@@ -403,7 +381,7 @@
       </div>
     </section>
 
-    <!-- SECCIÓN: Comparación de Modelos (Tarjetitas con "Like" interactivo) -->
+    <!-- SECCIÓN: Comparación de Modelos (Revertido a 6 tarjetas completas con estadísticas) -->
     <section class="custom-card mt-8 max-w-[1200px] mx-auto overflow-hidden">
       <!-- Header Colapsable -->
       <div id="modelsAccordionHeader" class="p-6 cursor-pointer flex items-center justify-between select-none hover:bg-slate-900/30 transition-colors">
@@ -414,8 +392,8 @@
             </svg>
           </div>
           <div>
-            <h2 class="font-bold text-base text-white">Comparación de Modelos Inteligente</h2>
-            <p class="text-xs text-slate-400">Tarjetas de modelos optimizadas según la complejidad de tu prompt. Haz clic en el botón 👍 (Like) para ver estadísticas detalladas.</p>
+            <h2 class="font-bold text-base text-white">Comparación de Modelos</h2>
+            <p class="text-xs text-slate-400">Estadísticas de tokens, costos estimados y ventanas de contexto entre 6 LLMs principales</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -426,10 +404,10 @@
         </div>
       </div>
 
-      <!-- Contenido Acordeón (Grid de Tarjetitas) -->
+      <!-- Contenido Acordeón (Grid de 6 Tarjetas) -->
       <div id="modelsAccordionBody" class="accordion-content px-6 pb-6">
-        <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-          <!-- Tarjetitas renderizadas dinámicamente por JS -->
+        <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+          <!-- Tarjetas renderizadas dinámicamente por JS -->
         </div>
       </div>
     </section>
