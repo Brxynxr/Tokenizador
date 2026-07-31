@@ -99,8 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyBtn = document.getElementById('copyBtn');
   const clearBtn = document.getElementById('clearBtn');
 
-  const recommendationCard = document.getElementById('recommendationCard');
-  const recommendationText = document.getElementById('recommendationText');
+  const optRecommendation = document.getElementById('optRecommendation');
 
   // Stats elements (Prompt Original footer)
   const statInputChars = document.getElementById('statInputChars');
@@ -130,12 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const optimizedPromptOutput = document.getElementById('optimizedPromptOutput');
   const optLanguageBadge = document.getElementById('optLanguageBadge');
   const optimizedImprovementsList = document.getElementById('optimizedImprovementsList');
-  const optBeforeCircle = document.getElementById('optBeforeCircle');
-  const optBeforeScore = document.getElementById('optBeforeScore');
-  const optBeforeStars = document.getElementById('optBeforeStars');
-  const optBeforeLabel = document.getElementById('optBeforeLabel');
-  const optBeforeLevelBadge = document.getElementById('optBeforeLevelBadge');
-  const optBeforeMetrics = document.getElementById('optBeforeMetrics');
   const optAfterCircle = document.getElementById('optAfterCircle');
   const optAfterScore = document.getElementById('optAfterScore');
   const optAfterStars = document.getElementById('optAfterStars');
@@ -153,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyOptimizedBtn = document.getElementById('copyOptimizedBtn');
   const optimizeScopeBtn = document.getElementById('optimizeScopeBtn');
   const optimizeScopeMenu = document.getElementById('optimizeScopeMenu');
+  const toggleOptimizedBtn = document.getElementById('toggleOptimizedBtn');
 
   // Models Grid
   const modelsGrid = document.getElementById('modelsGrid');
@@ -232,18 +226,18 @@ document.addEventListener('DOMContentLoaded', () => {
     checkEfficiency();
   }
 
-  // Efficiency recommendation with exact requested text
+  // Efficiency recommendation with exact requested text (shown inside optimized panel header)
   function checkEfficiency() {
     const inputTokens = parseInt(statInputTokens.textContent) || 0;
     const transTokens = parseInt(statTransTokens.textContent) || 0;
 
     if (inputTokens === 0 && transTokens === 0) {
-      recommendationCard.classList.add('hidden');
+      optRecommendation.classList.add('hidden');
       return;
     }
 
-    recommendationText.textContent = "Se recomienda procesar la consulta en Inglés (Traducido) mediante DeepSeek V3. Esta combinación ofrece el balance óptimo entre latencia ultra baja, reducción drástica en el consumo de tokens y un costo operacional mínimo sin sacrificar precisión.";
-    recommendationCard.classList.remove('hidden');
+    optRecommendation.textContent = "Se recomienda procesar la consulta en Inglés (Traducido) mediante DeepSeek V3. Esta combinación ofrece el balance óptimo entre latencia ultra baja, reducción drástica en el consumo de tokens y un costo operacional mínimo sin sacrificar precisión.";
+    optRecommendation.classList.remove('hidden');
   }
 
   // Helper to evaluate prompt quality strictly and accurately
@@ -445,19 +439,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let cheapestId = null;
     let minCost = Infinity;
-    evaluatedModels.forEach(m => {
-      if (m.totalCost < minCost) {
-        minCost = m.totalCost;
-        cheapestId = m.id;
-      }
-    });
+    if (inputTokens > 0) {
+      evaluatedModels.forEach(m => {
+        if (m.totalCost < minCost) {
+          minCost = m.totalCost;
+          cheapestId = m.id;
+        }
+      });
+    }
 
     // Reorder models so the most efficient model always appears FIRST
-    evaluatedModels.sort((a, b) => {
-      if (a.id === cheapestId) return -1;
-      if (b.id === cheapestId) return 1;
-      return a.totalCost - b.totalCost;
-    });
+    if (cheapestId) {
+      evaluatedModels.sort((a, b) => {
+        if (a.id === cheapestId) return -1;
+        if (b.id === cheapestId) return 1;
+        return a.totalCost - b.totalCost;
+      });
+    }
 
     let maxContextId = "gemini-1-5-pro";
 
@@ -831,7 +829,12 @@ ${constraints}`;
       return;
     }
 
-    const lang = detectLanguage(sourceText);
+    // Auto-detect best language: compare tokens in Spanish vs English
+    const esTokens = countTokens(sourceText, modelSelect.value);
+    const enTest = buildOptimizedPrompt(sourceText, 'en', scope);
+    const enTokens = countTokens(enTest, modelSelect.value);
+    const lang = enTokens < esTokens ? 'en' : 'es';
+
     const baseAnalysis = analyzePrompt(sourceText);
     const rawOptimized = buildOptimizedPrompt(sourceText, lang, scope);
     const cleanedOptimized = rawOptimized
@@ -846,17 +849,11 @@ ${constraints}`;
     const origAnalysis = evaluatePromptQuality(sourceText);
     const optAnalysis = evaluatePromptQuality(cleanedOptimized);
 
-    const beforeMetrics = document.getElementById('optBeforeMetrics');
     const afterMetrics = document.getElementById('optAfterMetrics');
-    const beforeCircle = document.getElementById('optBeforeCircle');
     const afterCircle = document.getElementById('optAfterCircle');
-    const beforeScore = document.getElementById('optBeforeScore');
     const afterScore = document.getElementById('optAfterScore');
-    const beforeLabel = document.getElementById('optBeforeLabel');
     const afterLabel = document.getElementById('optAfterLabel');
-    const beforeLevel = document.getElementById('optBeforeLevelBadge');
     const afterLevel = document.getElementById('optAfterLevelBadge');
-    const beforeStars = document.getElementById('optBeforeStars');
     const afterStars = document.getElementById('optAfterStars');
 
     const metricRows = (analysis) => `
@@ -868,22 +865,14 @@ ${constraints}`;
         <div class="flex justify-between"><span>Estructura</span><span class="text-cyan-300 font-bold">${analysis.structureScore}/20</span></div>
       </div>`;
 
-    beforeMetrics.innerHTML = metricRows(origAnalysis);
     afterMetrics.innerHTML = metricRows(optAnalysis);
 
-    beforeCircle.style.strokeDashoffset = `${251.2 - (origAnalysis.score / 100) * 251.2}`;
     afterCircle.style.strokeDashoffset = `${251.2 - (optAnalysis.score / 100) * 251.2}`;
-    beforeScore.textContent = `${origAnalysis.score}/100`;
     afterScore.textContent = `${optAnalysis.score}/100`;
-    beforeLabel.textContent = origAnalysis.label;
     afterLabel.textContent = optAnalysis.label;
-    beforeLevel.textContent = `${origAnalysis.level}`;
     afterLevel.textContent = `${optAnalysis.level}`;
-    beforeLevel.className = origAnalysis.levelClass;
     afterLevel.className = optAnalysis.levelClass;
-    beforeStars.textContent = origAnalysis.stars;
     afterStars.textContent = optAnalysis.stars;
-    beforeStars.className = origAnalysis.starsClass;
     afterStars.className = optAnalysis.starsClass;
 
     // Populate panel
@@ -918,6 +907,7 @@ ${constraints}`;
       `✓ Ámbito: ${selectedScopeLabel}`,
       `✓ Rol: ${typeLabelMap[baseAnalysis.type] || 'Experto'}`,
       `✓ Formato: ${baseAnalysis.formats.length ? baseAnalysis.formats.join(', ') : 'Estructurado'}`,
+      `✓ Idioma óptimo: ${lang === 'es' ? 'Español' : 'Inglés'}`,
       `✓ Precisión y anti-alucinación`
     ];
 
@@ -949,6 +939,11 @@ ${constraints}`;
 
   translateBtn.addEventListener('click', translateText);
   optimizeBtn.addEventListener('click', optimizePrompt);
+
+  toggleOptimizedBtn.addEventListener('click', () => {
+    optimizedPromptCard.classList.add('hidden');
+    optRecommendation.classList.add('hidden');
+  });
 
   optimizeScopeBtn.addEventListener('click', () => {
     optimizeScopeMenu.classList.toggle('hidden');
@@ -1007,7 +1002,7 @@ ${constraints}`;
     if (optimizeScopeMenu) optimizeScopeMenu.classList.add('hidden');
     updateStats('', true);
     updateStats('', false);
-    recommendationCard.classList.add('hidden');
+    optRecommendation.classList.add('hidden');
     renderModelComparisonCards();
   });
 });

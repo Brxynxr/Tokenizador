@@ -197,8 +197,8 @@
       to { background-position: 200% center; }
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BcqwtF6N.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BDLXko1n.css">
+  <script type="module" crossorigin src="/assets/index-rmFxBSHr.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CNsiNPBA.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
   
@@ -405,7 +405,15 @@
           </div>
         </div>
 
+        <div id="optRecommendation" class="hidden mt-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300" aria-live="polite"></div>
+
         <div class="flex items-center gap-2.5 self-end sm:self-auto">
+          <button id="toggleOptimizedBtn" title="Ocultar panel de optimización" aria-label="Ocultar panel optimizado" class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-all cursor-pointer">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+            <span>Ocultar</span>
+          </button>
           <button id="copyOptimizedBtn" title="Copiar Prompt Optimizado" aria-label="Copiar prompt optimizado" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-all cursor-pointer">
             <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
@@ -444,66 +452,34 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div class="bg-[#0d1120] border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Antes</span>
-                <p class="text-[11px] text-slate-500">Prompt original antes de la optimización</p>
-              </div>
-              <span id="optBeforeLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600">—</span>
+        <div class="bg-[#0d1120] border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Resultado Optimizado</span>
+              <p class="text-[11px] text-slate-500">Prompt reescrito con contexto, estructura y precisión</p>
             </div>
-            <div class="flex flex-col items-center justify-center">
-              <div class="relative w-24 h-24 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" stroke="#1e2640" stroke-width="8" fill="none" />
-                  <circle id="optBeforeCircle" cx="50" cy="50" r="40" stroke="url(#optBeforeGradient)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" fill="none" class="transition-all duration-500 ease-out" />
-                  <defs>
-                    <linearGradient id="optBeforeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#f87171" />
-                      <stop offset="100%" stop-color="#fb923c" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span id="optBeforeScore" class="text-xl font-extrabold text-white leading-none">0/100</span>
-                </div>
-              </div>
-              <div id="optBeforeStars" class="mt-2 text-sm leading-none tracking-wide text-slate-500">☆☆☆</div>
-              <p id="optBeforeLabel" class="text-xs font-medium text-slate-400 mt-2 px-2 text-center">Esperando optimización...</p>
-            </div>
-            <div id="optBeforeMetrics" class="space-y-2 text-xs text-slate-300"></div>
+            <span id="optAfterLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600">—</span>
           </div>
-
-          <div class="bg-[#0d1120] border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Después</span>
-                <p class="text-[11px] text-slate-500">Prompt reescrito con contexto y estructura</p>
+          <div class="flex flex-col items-center justify-center">
+            <div class="relative w-24 h-24 flex items-center justify-center">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="#1e2640" stroke-width="8" fill="none" />
+                <circle id="optAfterCircle" cx="50" cy="50" r="40" stroke="url(#optAfterGradient)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" fill="none" class="transition-all duration-500 ease-out" />
+                <defs>
+                  <linearGradient id="optAfterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#22d3ee" />
+                    <stop offset="100%" stop-color="#ff2fd6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="optAfterScore" class="text-xl font-extrabold text-white leading-none">0/100</span>
               </div>
-              <span id="optAfterLevelBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600">—</span>
             </div>
-            <div class="flex flex-col items-center justify-center">
-              <div class="relative w-24 h-24 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" stroke="#1e2640" stroke-width="8" fill="none" />
-                  <circle id="optAfterCircle" cx="50" cy="50" r="40" stroke="url(#optAfterGradient)" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" fill="none" class="transition-all duration-500 ease-out" />
-                  <defs>
-                    <linearGradient id="optAfterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#22d3ee" />
-                      <stop offset="100%" stop-color="#ff2fd6" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <span id="optAfterScore" class="text-xl font-extrabold text-white leading-none">0/100</span>
-                </div>
-              </div>
-              <div id="optAfterStars" class="mt-2 text-sm leading-none tracking-wide text-slate-500">☆☆☆</div>
-              <p id="optAfterLabel" class="text-xs font-medium text-slate-400 mt-2 px-2 text-center">Listo para comparar.</p>
-            </div>
-            <div id="optAfterMetrics" class="space-y-2 text-xs text-slate-300"></div>
+            <div id="optAfterStars" class="mt-2 text-sm leading-none tracking-wide text-slate-500">☆☆☆</div>
+            <p id="optAfterLabel" class="text-xs font-medium text-slate-400 mt-2 px-2 text-center">Listo para comparar.</p>
           </div>
+          <div id="optAfterMetrics" class="space-y-2 text-xs text-slate-300"></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -550,21 +526,6 @@
         </div>
       </div>
     </section>
-
-    <!-- Recommendation Banner (Exact user message) -->
-    <div id="recommendationCard" class="max-w-[1200px] mx-auto mt-6 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur hidden">
-      <div class="flex items-center gap-4">
-        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        </div>
-        <div>
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-0.5">Análisis de Eficiencia Óptima</h3>
-          <p id="recommendationText" class="text-sm text-slate-200" aria-live="polite"></p>
-        </div>
-      </div>
-    </div>
 
     <!-- PANEL: Análisis del Prompt -->
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
