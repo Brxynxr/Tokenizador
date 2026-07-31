@@ -95,8 +95,29 @@
     button:active {
       transform: scale(0.97) !important;
     }
+    .model-card {
+      background: #0d1120;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      transition: all 0.25s ease;
+    }
+    .model-card:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 20px rgba(100,120,255,0.12);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+      opacity: 0;
+    }
+    .accordion-content.expanded {
+      max-height: 2500px;
+      opacity: 1;
+    }
   </style>
-  <script type="module" crossorigin src="/assets/index-BoAQTjCC.js"></script>
+  <script type="module" crossorigin src="/assets/index-B-oaiNDJ.js"></script>
 </head>
 <body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
   
@@ -190,7 +211,7 @@
       <div class="flex flex-col items-center justify-center gap-4 py-4 lg:py-0">
         
         <!-- Ícono central circular con anillo neón (Swap de contenido y lenguajes) -->
-        <div id="centralSwapCircle" title="Intercambiar contenidos y idiomas" class="neon-ring w-16 h-16 flex items-center justify-center shadow-xl cursor-pointer transition-transform duration-400 ease-in-out hover:scale-105">
+        <div id="centralSwapCircle" title="Intercambiar contenidos e idiomas" class="neon-ring w-16 h-16 flex items-center justify-center shadow-xl cursor-pointer transition-transform duration-400 ease-in-out hover:scale-105">
           <svg class="w-7 h-7 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
           </svg>
@@ -303,7 +324,7 @@
       </div>
     </div>
 
-    <!-- NUEVO PANEL: Análisis del Prompt (Full Width) -->
+    <!-- PANEL: Análisis del Prompt (Full Width) -->
     <section class="custom-card p-6 mt-8 max-w-[1200px] mx-auto">
       <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
@@ -388,6 +409,37 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- NUEVA SECCIÓN: Comparación de Modelos (Acordeón Full Width) -->
+    <section class="custom-card mt-8 max-w-[1200px] mx-auto overflow-hidden">
+      <!-- Header Colapsable -->
+      <div id="modelsAccordionHeader" class="p-6 cursor-pointer flex items-center justify-between select-none hover:bg-slate-900/30 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 class="font-bold text-base text-white">Comparación de Modelos</h2>
+            <p class="text-xs text-slate-400">Estadísticas de tokens, costos estimados y ventanas de contexto entre 6 LLMs principales</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hidden sm:inline-block">6 Modelos</span>
+          <svg id="accordionChevron" class="w-5 h-5 text-slate-400 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Contenido Acordeón (Grid de Tarjetas) -->
+      <div id="modelsAccordionBody" class="accordion-content px-6 pb-6">
+        <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+          <!-- Tarjetas renderizadas dinámicamente por JS -->
+        </div>
       </div>
     </section>
 

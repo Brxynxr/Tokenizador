@@ -1,5 +1,74 @@
 import { getEncoding } from "js-tiktoken";
 
+const MODELS = [
+  {
+    id: "gpt-4o",
+    name: "GPT-4o",
+    company: "OpenAI",
+    initial: "O",
+    color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    inputCostPer1M: 2.50,
+    outputCostPer1M: 10.00,
+    contextWindow: "128K",
+    contextValue: 128000
+  },
+  {
+    id: "claude-3-5",
+    name: "Claude 3.5 Sonnet",
+    company: "Anthropic",
+    initial: "C",
+    color: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+    inputCostPer1M: 3.00,
+    outputCostPer1M: 15.00,
+    contextWindow: "200K",
+    contextValue: 200000
+  },
+  {
+    id: "gemini-1-5-pro",
+    name: "Gemini 1.5 Pro",
+    company: "Google",
+    initial: "G",
+    color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    inputCostPer1M: 1.25,
+    outputCostPer1M: 5.00,
+    contextWindow: "2M",
+    contextValue: 2000000
+  },
+  {
+    id: "llama-3-1",
+    name: "Llama 3.1 70B",
+    company: "Meta",
+    initial: "M",
+    color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+    inputCostPer1M: 0.70,
+    outputCostPer1M: 0.90,
+    contextWindow: "128K",
+    contextValue: 128000
+  },
+  {
+    id: "mistral-large",
+    name: "Mistral Large 2",
+    company: "Mistral",
+    initial: "Mi",
+    color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    inputCostPer1M: 2.00,
+    outputCostPer1M: 6.00,
+    contextWindow: "128K",
+    contextValue: 128000
+  },
+  {
+    id: "deepseek-v3",
+    name: "DeepSeek V3",
+    company: "DeepSeek",
+    initial: "D",
+    color: "bg-violet-500/20 text-violet-400 border-violet-500/30",
+    inputCostPer1M: 0.14,
+    outputCostPer1M: 0.28,
+    contextWindow: "64K",
+    contextValue: 64000
+  }
+];
+
 document.addEventListener('DOMContentLoaded', () => {
   const promptInput = document.getElementById('promptInput');
   const translatedTextOutput = document.getElementById('translatedTextOutput');
@@ -36,7 +105,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const tempIndicatorDot = document.getElementById('tempIndicatorDot');
   const recommendationsList = document.getElementById('recommendationsList');
 
+  // Models Accordion elements
+  const modelsAccordionHeader = document.getElementById('modelsAccordionHeader');
+  const modelsAccordionBody = document.getElementById('modelsAccordionBody');
+  const accordionChevron = document.getElementById('accordionChevron');
+  const modelsGrid = document.getElementById('modelsGrid');
+
   let isRotated = false;
+  let isAccordionOpen = false;
+  let debounceTimer = null;
+
+  // Toggle Accordion
+  modelsAccordionHeader.addEventListener('click', () => {
+    isAccordionOpen = !isAccordionOpen;
+    if (isAccordionOpen) {
+      modelsAccordionBody.classList.add('expanded');
+      accordionChevron.style.transform = 'rotate(180deg)';
+      renderModelComparisonCards();
+    } else {
+      modelsAccordionBody.classList.remove('expanded');
+      accordionChevron.style.transform = 'rotate(0deg)';
+    }
+  });
 
   // Get token count using js-tiktoken
   function countTokens(text, modelName) {
@@ -67,8 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
       statInputWords.textContent = words;
       statInputLines.textContent = lines;
       statInputTokens.textContent = tokens;
-      // Run prompt analysis whenever input changes
       runPromptAnalysis(text);
+      
+      if (isAccordionOpen) {
+        renderModelComparisonCards();
+      }
     } else {
       statTransChars.textContent = chars;
       statTransWords.textContent = words;
@@ -128,34 +221,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const words = trimmed.split(/\s+/).length;
     const sentences = trimmed.split(/[.!?]+/).filter(Boolean).length;
 
-    // Heuristics scoring (0 to 100)
     let score = 50;
-
-    // 1. Length factor
     if (words < 8) score -= 25;
     else if (words < 15) score -= 10;
     else if (words >= 20 && words <= 200) score += 20;
     else if (words > 350) score -= 10;
 
-    // 2. Action verbs / instruction presence
     const actionVerbs = /(actúa|explica|genera|analiza|escribe|resume|diseña|crea|traduce|resuelve|ayúdame|cuál|cómo|desarrolla|programa)/i;
     if (actionVerbs.test(trimmed)) score += 15;
 
-    // 3. Context / examples
     const contextKeywords = /(ejemplo|contexto|caso|situación|escenario|basado en|dado que)/i;
     if (contextKeywords.test(trimmed)) score += 10;
 
-    // 4. Specificity / constraints (format, tone, audience)
     const constraintKeywords = /(formato|lista|tabla|json|código|markdown|tono|público|experto|principiante|restríngete|máximo|palabras|estricto)/i;
     if (constraintKeywords.test(trimmed)) score += 15;
 
-    // 5. Structure (multiple sentences)
     if (sentences >= 2) score += 10;
 
-    // Clamp score between 0 and 100
     score = Math.max(0, Math.min(100, score));
 
-    // Update Quality Circle UI
     qualityScoreNum.textContent = `${score}/100`;
     const circumference = 251.2;
     const offset = circumference - (score / 100) * circumference;
@@ -172,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
       qualityScoreLabel.className = "text-xs font-medium text-[#4ade80] mt-2 px-2";
     }
 
-    // Temperature Heuristics
     let temp = 0.5;
     const creativeWords = /(historia|poema|brainstorm|ideas|ficción|crear|inventa|narrativa|cuento|imagina|creativo)/i;
     const technicalWords = /(código|datos|exacto|preciso|función|api|sql|bug|calcular|fórmula|matemáticas|analiza|técnico|json|script)/i;
@@ -192,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const percent = temp * 100;
     tempIndicatorDot.style.left = `${percent}%`;
 
-    // Recommendations Generation
     const recs = [];
     if (words < 15) {
       recs.push("Agrega más contexto o detalle para obtener mejores resultados.");
@@ -220,6 +302,108 @@ document.addEventListener('DOMContentLoaded', () => {
         <span>${rec}</span>
       </li>
     `).join('');
+  }
+
+  // Render Model Comparison Cards
+  function renderModelComparisonCards() {
+    const inputTokens = parseInt(statInputTokens.textContent) || 0;
+    const assumedOutputTokens = 500; // Average response assumption
+
+    // Calculate costs for each model
+    const evaluatedModels = MODELS.map(model => {
+      const inputCost = (inputTokens / 1000000) * model.inputCostPer1M;
+      const outputCost = (assumedOutputTokens / 1000000) * model.outputCostPer1M;
+      const totalCost = inputCost + outputCost;
+      return {
+        ...model,
+        inputCost,
+        outputCost,
+        totalCost,
+        tokens: inputTokens
+      };
+    });
+
+    // Find cheapest model (lowest total cost)
+    let cheapestId = null;
+    let minCost = Infinity;
+    evaluatedModels.forEach(m => {
+      if (m.totalCost < minCost) {
+        minCost = m.totalCost;
+        cheapestId = m.id;
+      }
+    });
+
+    // Find largest context window model
+    let maxContextId = "gemini-1-5-pro"; // Gemini 1.5 Pro has 2M
+
+    modelsGrid.innerHTML = evaluatedModels.map((m, index) => {
+      const isCheapest = m.id === cheapestId;
+      const isLargestContext = m.id === maxContextId;
+
+      let borderClass = "border-slate-800/80";
+      if (isCheapest) borderClass = "border-emerald-500/50 shadow-lg shadow-emerald-500/10";
+
+      return `
+        model-card p-4 flex flex-col justify-between opacity-0 translate-y-3 transition-all duration-300 ${borderClass}" 
+        style="transition-delay: ${index * 50}ms;"
+        id="model-card-${m.id}"
+      >
+        <div>
+          <!-- Model Header -->
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl ${m.color} border flex items-center justify-center font-bold text-xs">
+                ${m.initial}
+              </div>
+              <div>
+                <h3 class="font-bold text-sm text-white leading-tight">${m.name}</h3>
+                <span class="text-[11px] text-slate-400">${m.company}</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              ${isCheapest ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Más económico</span>' : ''}
+              ${isLargestContext ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Mayor contexto</span>' : ''}
+            </div>
+          </div>
+
+          <!-- Stats List -->
+          <div class="space-y-2 pt-2 border-t border-slate-800/60 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Tokens estimados:</span>
+              <span class="font-bold text-white">${m.tokens}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Costo input:</span>
+              <span class="font-mono text-slate-200">$${m.inputCost.toFixed(6)}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Costo output (~500t):</span>
+              <span class="font-mono text-slate-200">$${m.outputCost.toFixed(5)}</span>
+            </div>
+            <div class="flex justify-between items-center pt-1 border-t border-slate-800/40">
+              <span class="text-slate-300 font-medium">Costo total:</span>
+              <span class="font-mono font-bold text-indigo-400">$${m.totalCost.toFixed(5)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Ventana de contexto:</span>
+          <span class="font-bold text-slate-200 px-2 py-0.5 rounded bg-slate-800/80">${m.contextWindow}</span>
+        </div>
+      </div>
+      `;
+    }).join('');
+
+    // Trigger stagger fade-in animation
+    setTimeout(() => {
+      evaluatedModels.forEach((m) => {
+        const el = document.getElementById(`model-card-${m.id}`);
+        if (el) {
+          el.classList.remove('opacity-0', 'translate-y-3');
+        }
+      });
+    }, 20);
   }
 
   // Contextual translation using free public API
@@ -265,19 +449,16 @@ document.addEventListener('DOMContentLoaded', () => {
     isRotated = !isRotated;
     centralSwapCircle.style.transform = isRotated ? 'rotate(180deg)' : 'rotate(0deg)';
 
-    // Swap textareas
     const tempText = promptInput.value;
     promptInput.value = translatedTextOutput.value;
     translatedTextOutput.value = tempText;
 
-    // Swap languages
     const tempLang = sourceLangSelect.value;
     sourceLangSelect.value = targetLangSelect.value;
     if (tempLang !== 'auto') {
       targetLangSelect.value = tempLang;
     }
 
-    // Recalculate stats for both
     updateStats(promptInput.value, true);
     updateStats(translatedTextOutput.value, false);
   }
@@ -299,7 +480,6 @@ document.addEventListener('DOMContentLoaded', () => {
       promptInput.value = optimized;
       updateStats(optimized, true);
 
-      // Automatically translate
       await translateText();
     } catch (e) {
       console.error("Optimization error:", e);
@@ -309,9 +489,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Event Listeners for real-time stats & analysis
+  // Event Listeners with Debounce (300ms) for promptInput
   promptInput.addEventListener('input', (e) => {
-    updateStats(e.target.value, true);
+    const val = e.target.value;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      updateStats(val, true);
+    }, 300);
   });
 
   translatedTextOutput.addEventListener('input', (e) => {
@@ -353,5 +537,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStats('', true);
     updateStats('', false);
     recommendationCard.classList.add('hidden');
+    if (isAccordionOpen) {
+      renderModelComparisonCards();
+    }
   });
 });
