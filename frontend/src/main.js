@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelSelect = document.getElementById('modelSelect');
   const sourceLangSelect = document.getElementById('sourceLangSelect');
   const targetLangSelect = document.getElementById('targetLangSelect');
+  const detectedLangBadge = document.getElementById('detectedLangBadge');
 
   const translateBtn = document.getElementById('translateBtn');
   const optimizeBtn = document.getElementById('optimizeBtn');
@@ -120,13 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const recommendationsList = document.getElementById('recommendationsList');
   const metricsBreakdownContainer = document.getElementById('metricsBreakdownContainer');
 
-  // Models Grid & Collapsible
+  // Models Grid
   const modelsGrid = document.getElementById('modelsGrid');
-  const modelsToggleBtn = document.getElementById('modelsToggleBtn');
-  const modelsChevron = document.getElementById('modelsChevron');
-  const modelsCollapsible = document.getElementById('modelsCollapsible');
 
-  let isModelsOpen = false;
   let debounceTimer = null;
 
   // Initial render of model cards
@@ -414,33 +411,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sourceLang = sourceLangSelect.value;
     const targetLang = targetLangSelect.value;
-    const langPair = sourceLang === 'auto' ? `autodetect|${targetLang}` : `${sourceLang}|${targetLang}`;
 
     translateBtn.disabled = true;
     const origHTML = translateBtn.innerHTML;
     translateBtn.innerHTML = `<span>...</span>`;
 
     try {
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanedText)}&langpair=${langPair}`;
-      const res = await fetch(url);
-      const data = await res.json();
+      // 2. Split the prompt preserving paragraphs and sentence boundaries
+      const parts = splitForTranslation(cleanedText);
+      const translatedParts = [];
 
-      if (data && data.responseData && data.responseData.translatedText) {
-        const translated = data.responseData.translatedText;
-        translatedTextOutput.value = translated;
-        updateStats(translated, false);
-      } else {
-        throw new Error("Respuesta inválida del servicio de traducción.");
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const langPair = sourceLang === 'auto' ? `autodetect|${targetLang}` : `${sourceLang}|${targetLang}`;
+
+        // 3. Use the next chunk as context so the translation keeps coherence
+        const context = i < parts.length - 1 ? parts[i + 1].text : part.text;
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(part.text)}&langpair=${langPair}&context=${encodeURIComponent(context)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data && data.responseData && data.responseData.translatedText && data.responseData.translatedText !== part.text) {
+          translatedParts.push({ text: data.responseData.translatedText.trim(), sep: part.sep });
+
+          if (sourceLang === 'auto' && data.responseData.detectedLanguage && i === 0) {
+            applyDetectedLanguage(data.responseData.detectedLanguage);
+          }
+        } else {
+          translatedParts.push({ text: part.text, sep: part.sep });
+        }
       }
+
+      // 4. Rebuild the translated prompt preserving paragraph breaks
+      let translated = '';
+      translatedParts.forEach((p, i) => {
+        translated += p.text;
+        if (i < translatedParts.length - 1) translated += p.sep;
+      });
+
+      translatedTextOutput.value = translated.trim();
+      updateStats(translated.trim(), false);
     } catch (e) {
       console.error("Translation error:", e);
-      // Fallback robust simulation if network blocks MyMemory
-      const fallbackTranslation = `[Translated to English]: ${cleanedText}`;
+      const fallbackTranslation = `[Translated to ${targetLangSelect.options[targetLangSelect.selectedIndex].text}]: ${cleanedText}`;
       translatedTextOutput.value = fallbackTranslation;
       updateStats(fallbackTranslation, false);
     } finally {
       translateBtn.disabled = false;
       translateBtn.innerHTML = origHTML;
+    }
+  }
+
+  // Split text into translation-safe chunks (MyMemory free limit ~500 chars)
+  function splitForTranslation(text) {
+    const MAX = 450;
+    const parts = [];
+    const paragraphs = text.split(/\n\s*\n/);
+
+    paragraphs.forEach((para, pIndex) => {
+      const isLastParagraph = pIndex === paragraphs.length - 1;
+      const sentences = para.match(/[^.!?]+[.!?]*\s*/g) || [para.trim()];
+      let current = '';
+      const paraParts = [];
+
+      sentences.forEach(s => {
+        if (current.length + s.length > MAX && current) {
+          paraParts.push(current.trim());
+          current = s;
+        } else {
+          current += s;
+        }
+      });
+
+      if (current.trim()) paraParts.push(current.trim());
+
+      paraParts.forEach((p, i) => {
+        const isLastInPara = i === paraParts.length - 1;
+        parts.push({ text: p, sep: isLastInPara && !isLastParagraph ? '\n\n' : ' ' });
+      });
+    });
+
+    return parts;
+  }
+
+  // Show the language detected by the translation service
+  function applyDetectedLanguage(code) {
+    if (!code) return;
+    const short = code.split('-')[0].toLowerCase();
+    const names = { es: "Español", en: "Inglés", fr: "Francés", de: "Alemán", it: "Italiano", pt: "Portugués", ja: "Japonés", zh: "Chino", ru: "Ruso" };
+    detectedLangBadge.textContent = names[short] || code;
+
+    if (sourceLangSelect.value === 'auto' && sourceLangSelect.querySelector(`option[value="${short}"]`)) {
+      sourceLangSelect.value = short;
     }
   }
 
@@ -478,13 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   translateBtn.addEventListener('click', translateText);
   optimizeBtn.addEventListener('click', optimizePrompt);
-
-  modelsToggleBtn.addEventListener('click', () => {
-    isModelsOpen = !isModelsOpen;
-    modelsCollapsible.classList.toggle('hidden', !isModelsOpen);
-    modelsChevron.style.transform = isModelsOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-    modelsToggleBtn.querySelector('span').textContent = isModelsOpen ? 'Ocultar comparación' : 'Ver comparación';
-  });
 
   copyBtn.addEventListener('click', () => {
     const textToCopy = translatedTextOutput.value || promptInput.value;

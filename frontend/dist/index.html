@@ -111,8 +111,8 @@
       border-color: rgba(34,211,238,0.3);
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-BKj64Vcp.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-D--D5ecJ.css">
+  <script type="module" crossorigin src="/assets/index-BY_4bQcX.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DEbfDoWu.css">
 </head>
 <body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
   
@@ -165,7 +165,7 @@
                 <option value="de">🇩🇪 Alemán</option>
                 <option value="auto">🌐 Auto</option>
               </select>
-              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-[#4ade80] border border-emerald-500/30">
+              <span id="detectedLangBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-[#4ade80] border border-emerald-500/30">
                 Detectado
               </span>
             </div>
@@ -398,23 +398,12 @@
             <p class="text-xs text-slate-400">Estadísticas de tokens, costos estimados y ventanas de contexto entre 6 LLMs principales</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">8 Modelos</span>
-          <button id="modelsToggleBtn" class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer">
-            <span>Ver comparación</span>
-            <svg id="modelsChevron" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-          </button>
-        </div>
+        <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">8 Modelos</span>
       </div>
 
-      <!-- Contenido colapsable -->
-      <div id="modelsCollapsible" class="hidden">
-        <!-- Grid de 8 Tarjetas -->
-        <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-          <!-- Tarjetas renderizadas dinámicamente por JS -->
-        </div>
+      <!-- Grid de 8 Tarjetas -->
+      <div id="modelsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+        <!-- Tarjetas renderizadas dinámicamente por JS -->
       </div>
     </section>
 
