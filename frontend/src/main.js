@@ -9,7 +9,7 @@ const MODELS = [
     name: "GPT-4o",
     company: "OpenAI",
     initial: "O",
-    color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 2.50,
     outputCostPer1M: 10.00,
     contextWindow: "128K"
@@ -19,7 +19,7 @@ const MODELS = [
     name: "GPT-4o mini",
     company: "OpenAI",
     initial: "4m",
-    color: "bg-teal-500/20 text-teal-400 border-teal-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 0.15,
     outputCostPer1M: 0.60,
     contextWindow: "128K"
@@ -29,7 +29,7 @@ const MODELS = [
     name: "Claude 3.5 Sonnet",
     company: "Anthropic",
     initial: "C",
-    color: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 3.00,
     outputCostPer1M: 15.00,
     contextWindow: "200K"
@@ -39,7 +39,7 @@ const MODELS = [
     name: "Claude 3.5 Haiku",
     company: "Anthropic",
     initial: "Ha",
-    color: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 0.80,
     outputCostPer1M: 4.00,
     contextWindow: "200K"
@@ -49,7 +49,7 @@ const MODELS = [
     name: "Gemini 1.5 Pro",
     company: "Google",
     initial: "G",
-    color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 1.25,
     outputCostPer1M: 5.00,
     contextWindow: "2M"
@@ -59,7 +59,7 @@ const MODELS = [
     name: "Llama 3.1 70B",
     company: "Meta",
     initial: "M",
-    color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 0.70,
     outputCostPer1M: 0.90,
     contextWindow: "128K"
@@ -69,7 +69,7 @@ const MODELS = [
     name: "Mistral Large 2",
     company: "Mistral",
     initial: "Mi",
-    color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 2.00,
     outputCostPer1M: 6.00,
     contextWindow: "128K"
@@ -79,7 +79,7 @@ const MODELS = [
     name: "DeepSeek V3",
     company: "DeepSeek",
     initial: "D",
-    color: "bg-violet-500/20 text-violet-400 border-violet-500/30",
+    color: "bg-l2 text-sec border-c",
     inputCostPer1M: 0.14,
     outputCostPer1M: 0.28,
     contextWindow: "64K"
@@ -150,6 +150,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Models Grid
   const modelsGrid = document.getElementById('modelsGrid');
+
+  // Theme toggle
+  const themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', () => {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    try {
+      localStorage.setItem('pt-theme', next);
+    } catch (e) {
+      // almacenamiento no disponible
+    }
+  });
 
   let debounceTimer = null;
 
@@ -252,8 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
         structureScore: 0,
         level: '—',
         stars: '☆☆☆',
-        levelClass: 'px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-slate-800 text-slate-400 border border-slate-600',
-        starsClass: 'text-sm leading-none tracking-wide text-slate-600',
+        levelClass: 'badge badge-neutral',
+        starsClass: 'text-sm leading-none tracking-wide text-mut',
         label: 'Escribe tu prompt para evaluar la calidad.'
       };
     }
@@ -294,22 +307,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalScore = Math.min(100, lengthScore + actionScore + contextScore + formatScore + structureScore);
 
     let level = "Básico";
-    let levelClass = "px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-red-500/15 text-red-300 border border-red-500/30";
+    let levelClass = "badge badge-neutral";
     let stars = "★☆☆";
-    let starsClass = "text-sm leading-none tracking-wide text-red-400";
+    let starsClass = "text-sm leading-none tracking-wide text-mut";
     let label = "Prompt muy vago o incompleto. Agrega rol, contexto y formato.";
 
     if (totalScore >= 40 && totalScore <= 70) {
       level = "Intermedio";
-      levelClass = "px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-500/15 text-amber-300 border border-amber-500/30";
+      levelClass = "badge badge-accent";
       stars = "★★☆";
-      starsClass = "text-sm leading-none tracking-wide text-amber-400";
+      starsClass = "text-sm leading-none tracking-wide accent-text";
       label = "Prompt aceptable. Especifica restricciones o un formato de salida claro.";
     } else if (totalScore > 70) {
       level = "Pro";
-      levelClass = "px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+      levelClass = "badge badge-solid";
       stars = "★★★";
-      starsClass = "text-sm leading-none tracking-wide text-emerald-400";
+      starsClass = "text-sm leading-none tracking-wide accent-text";
       label = "Prompt claro, bien estructurado y con alto nivel de precisión.";
     }
 
@@ -336,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
       qualityScoreNum.textContent = "0/100";
       qualityProgressCircle.style.strokeDashoffset = "251.2";
       qualityScoreLabel.textContent = evalResult.label;
-      qualityScoreLabel.className = "text-xs font-medium text-slate-400 mt-2 px-2";
+      qualityScoreLabel.className = "text-xs font-medium text-sec mt-2 px-2";
 
       qualityLevelBadge.textContent = evalResult.level;
       qualityLevelBadge.className = evalResult.levelClass;
@@ -345,11 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       recommendationsList.innerHTML = `
         <li class="flex items-start gap-2">
-          <span class="text-slate-500">•</span>
+          <span class="text-mut">•</span>
           <span>Escribe tu prompt para recibir sugerencias de mejora en tiempo real.</span>
         </li>
       `;
-      metricsBreakdownContainer.innerHTML = `<div class="text-slate-500 text-center py-4">Esperando prompt...</div>`;
+      metricsBreakdownContainer.innerHTML = `<div class="text-mut text-center py-4">Esperando prompt...</div>`;
       return;
     }
 
@@ -368,11 +381,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     qualityScoreLabel.textContent = evalResult.label;
     if (evalResult.score < 40) {
-      qualityScoreLabel.className = "text-xs font-medium text-[#f87171] mt-2 px-2";
+      qualityScoreLabel.className = "text-xs font-medium text-mut mt-2 px-2";
     } else if (evalResult.score <= 70) {
-      qualityScoreLabel.className = "text-xs font-medium text-[#fb923c] mt-2 px-2";
+      qualityScoreLabel.className = "text-xs font-medium accent-text mt-2 px-2";
     } else {
-      qualityScoreLabel.className = "text-xs font-medium text-[#4ade80] mt-2 px-2";
+      qualityScoreLabel.className = "text-xs font-medium accent-text mt-2 px-2";
     }
 
     const metrics = [
@@ -388,11 +401,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return `
         <div>
           <div class="flex justify-between text-[11px] mb-1">
-            <span class="text-slate-300 font-medium">${m.name}</span>
-            <span class="text-cyan-300 font-bold">${m.val}/${m.max} (${pct}%)</span>
+            <span class="text-sec font-medium">${m.name}</span>
+            <span class="accent-text font-bold">${m.val}/${m.max} (${pct}%)</span>
           </div>
-          <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-gradient-to-r from-cyan-400 to-fuchsia-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width: ${pct}%"></div>
           </div>
         </div>
       `;
@@ -413,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     recommendationsList.innerHTML = recs.map(rec => `
       <li class="flex items-start gap-2">
-        <span class="text-cyan-300">💡</span>
+        <span class="accent-text">💡</span>
         <span>${rec}</span>
       </li>
     `).join('');
@@ -463,9 +476,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const isCheapest = m.id === cheapestId;
       const isLargestContext = m.id === maxContextId;
 
-      let borderClass = "border-slate-800/80";
+      let borderClass = "border-c";
       if (isCheapest) {
-        borderClass = "border-2 border-emerald-400 shadow-[0_0_25px_rgba(52,211,153,0.35)] bg-emerald-950/20";
+        borderClass = "is-emphasized";
       }
 
       return `
@@ -477,39 +490,39 @@ document.addEventListener('DOMContentLoaded', () => {
                   ${m.initial}
                 </div>
                 <div>
-                  <h3 class="font-bold text-sm text-white leading-tight">${m.name}</h3>
-                  <span class="text-[11px] text-slate-400">${m.company}</span>
+                  <h3 class="font-bold text-sm text-pri leading-tight">${m.name}</h3>
+                  <span class="text-[11px] text-sec">${m.company}</span>
                 </div>
               </div>
               <div class="flex flex-col items-end gap-1">
-                ${isCheapest ? '<span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 border border-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.8)] uppercase tracking-wider">★ MÁS EFICIENTE</span>' : ''}
-                ${isLargestContext && !isCheapest ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Mayor contexto</span>' : ''}
+                ${isCheapest ? '<span class="badge badge-solid">★ MÁS EFICIENTE</span>' : ''}
+                ${isLargestContext && !isCheapest ? '<span class="badge badge-neutral">Mayor contexto</span>' : ''}
               </div>
             </div>
 
-            <div class="space-y-2 pt-2 border-t border-slate-800/60 text-xs">
+            <div class="space-y-2 pt-2 border-t border-c text-xs">
               <div class="flex justify-between items-center">
-                <span class="text-slate-400">Tokens estimados:</span>
-                <span class="font-bold text-white">${m.tokens}</span>
+                <span class="text-sec">Tokens estimados:</span>
+                <span class="font-bold text-pri">${m.tokens}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-slate-400">Costo input:</span>
-                <span class="font-mono text-slate-200">$${m.inputCost.toFixed(6)}</span>
+                <span class="text-sec">Costo input:</span>
+                <span class="font-mono text-sec">$${m.inputCost.toFixed(6)}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-slate-400">Costo output (~500t):</span>
-                <span class="font-mono text-slate-200">$${m.outputCost.toFixed(5)}</span>
+                <span class="text-sec">Costo output (~500t):</span>
+                <span class="font-mono text-sec">$${m.outputCost.toFixed(5)}</span>
               </div>
-              <div class="flex justify-between items-center pt-1 border-t border-slate-800/40">
-                <span class="text-slate-300 font-medium">Costo total:</span>
-                <span class="font-mono font-bold text-cyan-300">$${m.totalCost.toFixed(5)}</span>
+              <div class="flex justify-between items-center pt-1 border-t border-c">
+                <span class="text-sec font-medium">Costo total:</span>
+                <span class="font-mono font-bold accent-text">$${m.totalCost.toFixed(5)}</span>
               </div>
             </div>
           </div>
 
-          <div class="mt-3 pt-2.5 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
-            <span class="text-slate-400">Ventana de contexto:</span>
-            <span class="font-bold text-slate-200 px-2 py-0.5 rounded bg-slate-800/80">${m.contextWindow}</span>
+          <div class="mt-3 pt-2.5 border-t border-c flex items-center justify-between text-[11px]">
+            <span class="text-sec">Ventana de contexto:</span>
+            <span class="badge badge-neutral">${m.contextWindow}</span>
           </div>
         </div>
       `;
@@ -858,11 +871,11 @@ ${constraints}`;
 
     const metricRows = (analysis) => `
       <div class="space-y-2 text-[11px]">
-        <div class="flex justify-between"><span>Longitud adecuada</span><span class="text-cyan-300 font-bold">${analysis.lengthScore}/25</span></div>
-        <div class="flex justify-between"><span>Verbo de acción</span><span class="text-cyan-300 font-bold">${analysis.actionScore}/20</span></div>
-        <div class="flex justify-between"><span>Contexto o situación</span><span class="text-cyan-300 font-bold">${analysis.contextScore}/15</span></div>
-        <div class="flex justify-between"><span>Restricciones/Formato</span><span class="text-cyan-300 font-bold">${analysis.formatScore}/20</span></div>
-        <div class="flex justify-between"><span>Estructura</span><span class="text-cyan-300 font-bold">${analysis.structureScore}/20</span></div>
+        <div class="flex justify-between"><span>Longitud adecuada</span><span class="accent-text font-bold">${analysis.lengthScore}/25</span></div>
+        <div class="flex justify-between"><span>Verbo de acción</span><span class="accent-text font-bold">${analysis.actionScore}/20</span></div>
+        <div class="flex justify-between"><span>Contexto o situación</span><span class="accent-text font-bold">${analysis.contextScore}/15</span></div>
+        <div class="flex justify-between"><span>Restricciones/Formato</span><span class="accent-text font-bold">${analysis.formatScore}/20</span></div>
+        <div class="flex justify-between"><span>Estructura</span><span class="accent-text font-bold">${analysis.structureScore}/20</span></div>
       </div>`;
 
     afterMetrics.innerHTML = metricRows(optAnalysis);
@@ -884,8 +897,8 @@ ${constraints}`;
     const tokenDiffPct = origTokens > 0 ? Math.round(((optTokens - origTokens) / origTokens) * 100) : 0;
     optTokensDiff.textContent = `${tokenDiffPct >= 0 ? '+' : ''}${tokenDiffPct}%`;
     optTokensDiff.className = tokenDiffPct > 0
-      ? 'text-[10px] font-extrabold px-2 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30'
-      : 'text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      ? 'badge badge-neutral'
+      : 'badge badge-accent';
 
     optQualityBefore.textContent = `${origAnalysis.score}/100`;
     optQualityAfter.textContent = `${optAnalysis.score}/100`;
@@ -912,7 +925,7 @@ ${constraints}`;
     ];
 
     optimizedImprovementsList.innerHTML = improvements.map(imp => `
-      <span class="px-2.5 py-1 rounded-lg bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/25 font-medium">${imp}</span>
+      <span class="badge badge-accent">${imp}</span>
     `).join('');
 
     optimizedPromptCard.classList.remove('hidden');
@@ -984,7 +997,7 @@ ${constraints}`;
     navigator.clipboard.writeText(textToCopy).then(() => {
       const orig = copyBtn.innerHTML;
       copyBtn.innerHTML = `
-        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
       `;
