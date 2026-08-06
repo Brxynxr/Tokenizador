@@ -126,8 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Optimization panel elements
   const optimizedPromptCard = document.getElementById('optimizedPromptCard');
+  const optimizedContentWrapper = document.getElementById('optimizedContentWrapper');
   const optimizedPromptOutput = document.getElementById('optimizedPromptOutput');
-  const optLanguageBadge = document.getElementById('optLanguageBadge');
+  const optLangSelect = document.getElementById('optLangSelect');
   const optimizedImprovementsList = document.getElementById('optimizedImprovementsList');
   const optAfterCircle = document.getElementById('optAfterCircle');
   const optAfterScore = document.getElementById('optAfterScore');
@@ -842,11 +843,7 @@ ${constraints}`;
       return;
     }
 
-    // Auto-detect best language: compare tokens in Spanish vs English
-    const esTokens = countTokens(sourceText, modelSelect.value);
-    const enTest = buildOptimizedPrompt(sourceText, 'en', scope);
-    const enTokens = countTokens(enTest, modelSelect.value);
-    const lang = enTokens < esTokens ? 'en' : 'es';
+    const lang = optLangSelect.value;
 
     const baseAnalysis = analyzePrompt(sourceText);
     const rawOptimized = buildOptimizedPrompt(sourceText, lang, scope);
@@ -890,7 +887,7 @@ ${constraints}`;
 
     // Populate panel
     optimizedPromptOutput.value = cleanedOptimized;
-    optLanguageBadge.textContent = lang === 'es' ? '🇪🇸 Español' : '🇺🇸 Inglés';
+    // optLangSelect already reflects the value used, no need to update it
 
     optTokensBefore.textContent = origTokens;
     optTokensAfter.textContent = optTokens;
@@ -928,7 +925,8 @@ ${constraints}`;
       <span class="badge badge-accent">${imp}</span>
     `).join('');
 
-    optimizedPromptCard.classList.remove('hidden');
+    optimizedContentWrapper.classList.remove('hidden');
+    toggleOptimizedBtn.querySelector('span').textContent = 'Ocultar';
     optimizedPromptCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -954,8 +952,9 @@ ${constraints}`;
   optimizeBtn.addEventListener('click', optimizePrompt);
 
   toggleOptimizedBtn.addEventListener('click', () => {
-    optimizedPromptCard.classList.add('hidden');
-    optRecommendation.classList.add('hidden');
+    optimizedContentWrapper.classList.toggle('hidden');
+    const isHidden = optimizedContentWrapper.classList.contains('hidden');
+    toggleOptimizedBtn.querySelector('span').textContent = isHidden ? 'Mostrar' : 'Ocultar';
   });
 
   optimizeScopeBtn.addEventListener('click', () => {
@@ -1011,7 +1010,8 @@ ${constraints}`;
     promptInput.value = '';
     translatedTextOutput.value = '';
     if (optimizedPromptOutput) optimizedPromptOutput.value = '';
-    if (optimizedPromptCard) optimizedPromptCard.classList.add('hidden');
+    if (optimizedContentWrapper) optimizedContentWrapper.classList.add('hidden');
+    if (toggleOptimizedBtn) toggleOptimizedBtn.querySelector('span').textContent = 'Mostrar';
     if (optimizeScopeMenu) optimizeScopeMenu.classList.add('hidden');
     updateStats('', true);
     updateStats('', false);

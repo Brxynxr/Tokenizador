@@ -62,7 +62,7 @@
     <div class="w-full grid grid-cols-[1fr,150px,1fr] gap-4 items-center">
 
       <!-- 1. Card Prompt Original -->
-      <div class="custom-card p-5 flex flex-col justify-between h-full min-h-[480px]">
+      <div class="custom-card p-5 flex flex-col gap-4">
         <div>
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
@@ -82,10 +82,10 @@
           </div>
 
           <!-- Textarea container -->
-          <div class="relative mb-4">
+          <div class="relative">
             <textarea
               id="promptInput"
-              rows="6"
+              rows="4"
               class="custom-textarea w-full p-4 text-sm leading-relaxed"
               placeholder="Introduce tu prompt..."
             ></textarea>
@@ -153,7 +153,7 @@
       </div>
 
       <!-- 3. Card Prompt Traducido -->
-      <div class="custom-card p-5 flex flex-col justify-between h-full min-h-[480px]">
+      <div class="custom-card p-5 flex flex-col gap-4">
         <div>
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
@@ -172,10 +172,10 @@
           </div>
 
           <!-- Textarea container -->
-          <div class="relative mb-4">
+          <div class="relative">
             <textarea
               id="translatedTextOutput"
-              rows="6"
+              rows="4"
               class="custom-textarea w-full p-4 text-sm leading-relaxed"
               placeholder="La traducción aparecerá aquí..."
               aria-label="Prompt traducido"
@@ -212,8 +212,8 @@
     </div>
 
     <!-- PANEL: Resultado de Optimización del Prompt -->
-    <section id="optimizedPromptCard" class="custom-card p-6 mt-8 max-w-[1200px] mx-auto hidden transition-all duration-500">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-c">
+    <section id="optimizedPromptCard" class="custom-card p-6 mt-8 max-w-[1200px] mx-auto transition-all duration-500">
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-4 mb-6 pb-4 border-b border-c">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-2xl bg-l2 border border-c text-white flex items-center justify-center">
             <svg class="w-5 h-5 accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,37 +222,24 @@
           </div>
           <div>
             <h2 class="font-bold text-base text-pri flex items-center gap-2">
-              Prompt Optimizado con Éxito
+              Prompt Optimizado
               <span class="badge badge-accent">IA Avanzada</span>
             </h2>
-            <p class="text-xs text-sec">Versión mejorada dinámicamente con asignación de rol, formato y control de precisión</p>
           </div>
         </div>
 
-        <div id="optRecommendation" class="hidden mt-2 px-3 py-2 rounded-xl bg-l2 border border-c text-xs accent-text" aria-live="polite"></div>
-
-        <div class="flex items-center gap-2.5 self-end sm:self-auto">
-          <button id="toggleOptimizedBtn" title="Ocultar panel de optimización" aria-label="Ocultar panel optimizado" class="btn-secondary flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl">
-            <svg class="w-4 h-4 text-sec" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
+        <div class="flex items-center gap-2 self-end sm:self-center">
+          <button id="toggleOptimizedBtn" title="Mostrar/Ocultar" aria-label="Mostrar/Ocultar panel" class="btn-secondary px-3 py-2 text-xs font-semibold rounded-xl">
             <span>Ocultar</span>
           </button>
-          <button id="copyOptimizedBtn" title="Copiar Prompt Optimizado" aria-label="Copiar prompt optimizado" class="btn-secondary flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl">
-            <svg class="w-4 h-4 accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-            </svg>
-            <span>Copiar Optimizado</span>
+          <button id="copyOptimizedBtn" title="Copiar" aria-label="Copiar" class="btn-secondary px-3.5 py-2 text-xs font-semibold rounded-xl">
+            <span>Copiar</span>
           </button>
-
           <div class="relative">
-            <button id="optimizeScopeBtn" title="Seguir optimizando" aria-label="Seguir optimizando prompt" class="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all cursor-pointer">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-              <span>Seguir optimizando</span>
+            <button id="optimizeScopeBtn" title="Seguir optimizando" aria-label="Seguir optimizando" class="px-4 py-2 text-xs font-bold rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-all cursor-pointer">
+              <span>Optimizar...</span>
             </button>
-            <div id="optimizeScopeMenu" class="absolute right-0 mt-2 w-64 rounded-2xl border border-c bg-card hidden z-30 overflow-hidden">
+            <div id="optimizeScopeMenu" class="absolute right-0 mt-2 w-48 rounded-2xl border border-c bg-card hidden z-30 overflow-hidden">
               <button data-scope="reduce" class="w-full text-left px-4 py-3 text-xs text-pri hover:bg-l3 transition-colors border-b border-c">Reducir tokens</button>
               <button data-scope="specific" class="w-full text-left px-4 py-3 text-xs text-pri hover:bg-l3 transition-colors border-b border-c">Más específico</button>
               <button data-scope="format" class="w-full text-left px-4 py-3 text-xs text-pri hover:bg-l3 transition-colors border-b border-c">Mejor formato</button>
@@ -261,20 +248,26 @@
           </div>
         </div>
       </div>
+      
+      <div id="optRecommendation" class="hidden mb-6 px-4 py-3 rounded-xl bg-l2 border border-c text-xs accent-text" aria-live="polite"></div>
 
-      <div class="space-y-6">
-        <div class="bg-l2 border border-c rounded-2xl p-4">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold uppercase tracking-wider accent-text">Prompt Optimizado</span>
-            <span id="optLanguageBadge" class="badge badge-neutral">Español</span>
-          </div>
-          <textarea id="optimizedPromptOutput" readonly rows="7" class="custom-textarea w-full p-4 text-sm leading-relaxed focus:outline-none cursor-text mb-3" aria-label="Texto optimizado"></textarea>
+      <div id="optimizedContentWrapper" class="hidden">
+        <div class="space-y-6">
+          <div class="bg-l2 border border-c rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider accent-text">Prompt Optimizado</span>
+              <select id="optLangSelect" class="field text-xs rounded-full px-2.5 py-1 cursor-pointer">
+                <option value="es">🇪🇸 Español</option>
+                <option value="en">🇺🇸 Inglés</option>
+              </select>
+            </div>
+            <textarea id="optimizedPromptOutput" readonly rows="7" class="custom-textarea w-full p-4 text-sm leading-relaxed focus:outline-none cursor-text mb-3" aria-label="Texto optimizado"></textarea>
 
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-sec block mb-2">Mejoras Aplicadas:</span>
-            <div id="optimizedImprovementsList" class="flex flex-wrap gap-2 text-xs"></div>
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-sec block mb-2">Mejoras Aplicadas:</span>
+              <div id="optimizedImprovementsList" class="flex flex-wrap gap-2 text-xs"></div>
+            </div>
           </div>
-        </div>
 
         <div class="bg-l2 border border-c rounded-2xl p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">
