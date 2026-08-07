@@ -1,5 +1,6 @@
 import "./style.css";
 import { getEncoding } from "js-tiktoken";
+import { countTokens, getModelTokenizerInfo, getSupportedModels, isApproximation } from "./tokenizers.js";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
@@ -195,14 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return 0.5;
   }
 
-  // Get token count using js-tiktoken
-  function countTokens(text, modelName) {
+  // Get token count using selected encoding (sync - for input/translated stats)
+  function countTokensWithEncoding(text, encodingName) {
     if (!text || !text.trim()) return 0;
     try {
-      let encodingName = "cl100k_base";
-      if (modelName === "p50k_base") encodingName = "p50k_base";
-      if (modelName === "r50k_base") encodingName = "r50k_base";
-      
       const enc = getEncoding(encodingName);
       return enc.encode(text).length;
     } catch (e) {
@@ -211,13 +208,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Get token count using model-specific tokenizers (async - for model comparison)
+  async function countTokensAsync(text, modelId) {
+    if (!text || !text.trim()) return 0;
+    try {
+      return await countTokens(text, modelId);
+    } catch (e) {
+      console.error("Tokenization error:", e);
+      return Math.ceil(text.length / 4);
+    }
+  }
+
   // Update stats for input or translated text
-  function updateStats(text, isInput = true) {
+  async function updateStats(text, isInput = true) {
     const chars = text.length;
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
-    const modelName = modelSelect.value;
-    const tokens = countTokens(text, modelName);
+    const encodingName = modelSelect.value;
+    const tokens = countTokensWithEncoding(text, encodingName);
     const temp = calculateTemperature(text);
 
     if (isInput) {
@@ -433,34 +441,43 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  // Render Model Comparison Cards
-  function renderModelComparisonCards() {
-    const inputTokens = parseInt(statInputTokens.textContent) || 0;
+  // Render Model Comparison Cards (async - uses per-model tokenizers)
+  async function renderModelComparisonCards() {
+    const text = promptInput.value.trim();
+    if (!text) {
+      modelsGrid.innerHTML = '<div class="col-span-full text-center text-mut py-8">Escribe un prompt para ver la comparación</div>';
+      return;
+    }
+
     const assumedOutputTokens = 500;
 
-    const evaluatedModels = MODELS.map(model => {
-      const inputCost = (inputTokens / 1000000) * model.inputCostPer1M;
+    const tokenPromises = MODELS.map(async (model) => {
+      const tokens = await countTokensAsync(text, model.id);
+      const inputCost = (tokens / 1000000) * model.inputCostPer1M;
       const outputCost = (assumedOutputTokens / 1000000) * model.outputCostPer1M;
       const totalCost = inputCost + outputCost;
+      const info = getModelTokenizerInfo(model.id);
       return {
         ...model,
+        tokens,
         inputCost,
         outputCost,
         totalCost,
-        tokens: inputTokens
+        encoding: info.encoding,
+        isApproximation: info.isApproximation,
       };
     });
 
+    const evaluatedModels = await Promise.all(tokenPromises);
+
     let cheapestId = null;
     let minCost = Infinity;
-    if (inputTokens > 0) {
-      evaluatedModels.forEach(m => {
-        if (m.totalCost < minCost) {
-          minCost = m.totalCost;
-          cheapestId = m.id;
-        }
-      });
-    }
+    evaluatedModels.forEach(m => {
+      if (m.totalCost < minCost) {
+        minCost = m.totalCost;
+        cheapestId = m.id;
+      }
+    });
 
     // Reorder models so the most efficient model always appears FIRST
     if (cheapestId) {
@@ -481,6 +498,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isCheapest) {
         borderClass = "is-emphasized";
       }
+
+      const approxBadge = m.isApproximation
+        ? '<span class="badge badge-neutral ml-2" title="Tokenizador aproximado (no oficial)">≈ aprox</span>'
+        : '';
 
       return `
         <div class="model-card p-4 flex flex-col justify-between ${borderClass}">
@@ -504,7 +525,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="space-y-2 pt-2 border-t border-c text-xs">
               <div class="flex justify-between items-center">
                 <span class="text-sec">Tokens estimados:</span>
-                <span class="font-bold text-pri">${m.tokens}</span>
+                <span class="font-bold text-pri">${m.tokens}${approxBadge}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sec">Encoding:</span>
+                <span class="font-mono text-[10px] text-mut">${m.encoding}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sec">Costo input:</span>
@@ -528,6 +553,20 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     }).join('');
+
+    // Add disclaimer
+    const hasApproximations = evaluatedModels.some(m => m.isApproximation);
+    if (hasApproximations) {
+      const disclaimerEl = document.createElement('div');
+      disclaimerEl.className = 'col-span-full mt-4 p-3 rounded-lg bg-l2 border border-c text-[11px] text-mut';
+      disclaimerEl.innerHTML = `
+        <strong class="text-sec">Nota:</strong> Los valores marcados con "≈ aprox" usan tokenizadores aproximados (cl100k_base/o200k_base) 
+        porque los tokenizadores oficiales de Anthropic (Claude), Google (Gemini) y Meta (Llama) no son públicos. 
+        Los modelos Llama 3, Mistral y DeepSeek intentan cargar sus tokenizadores reales vía HuggingFace; 
+        si falla la carga, usan cl100k_base como fallback.
+      `;
+      modelsGrid.appendChild(disclaimerEl);
+    }
   }
 
   // Robust Contextual translation flow
