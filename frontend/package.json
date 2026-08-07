@@ -9,7 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "js-tiktoken": "^1.0.21"
+    "js-tiktoken": "^1.0.21",
+    "nspell": "^2.1.5"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",

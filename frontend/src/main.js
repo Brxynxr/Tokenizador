@@ -1,6 +1,7 @@
 import "./style.css";
 import { getEncoding } from "js-tiktoken";
 import { countTokens, getModelTokenizerInfo, getSupportedModels, isApproximation } from "./tokenizers.js";
+import nspell from "nspell";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
 
@@ -194,6 +195,301 @@ document.addEventListener('DOMContentLoaded', () => {
     if (creativeWords.test(trimmed)) return 0.85;
     if (technicalWords.test(trimmed)) return 0.2;
     return 0.5;
+  }
+
+  // ============================================================
+  // SPELL CHECKER (nspell + Hunspell) - OFFLINE
+  // ============================================================
+  let spellCheckers = { es: null, en: null };
+  let spellCheckerLoaded = { es: false, en: false };
+
+  async function loadSpellChecker(lang) {
+    if (spellCheckerLoaded[lang]) return spellCheckers[lang];
+    try {
+      const [affResponse, dicResponse] = await Promise.all([
+        fetch(`/assets/dictionaries/${lang}.aff`),
+        fetch(`/assets/dictionaries/${lang}.dic`)
+      ]);
+      const aff = await affResponse.arrayBuffer();
+      const dic = await dicResponse.arrayBuffer();
+      const spell = nspell(aff, dic);
+      spellCheckers[lang] = spell;
+      spellCheckerLoaded[lang] = true;
+      return spell;
+    } catch (e) {
+      console.warn(`Failed to load spell checker for ${lang}:`, e);
+      spellCheckerLoaded[lang] = false;
+      return null;
+    }
+  }
+
+  async function getSpellChecker(lang) {
+    if (!spellCheckerLoaded[lang]) {
+      await loadSpellChecker(lang);
+    }
+    return spellCheckers[lang];
+  }
+
+  function checkSpelling(text, lang) {
+    const spell = spellCheckers[lang];
+    if (!spell) return [];
+    const words = text.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]+/g) || [];
+    const misspelled = [];
+    for (const word of words) {
+      if (!spell.correct(word)) {
+        misspelled.push(word.toLowerCase());
+      }
+    }
+    return [...new Set(misspelled)];
+  }
+
+  function getSuggestions(word, lang) {
+    const spell = spellCheckers[lang];
+    if (!spell) return [];
+    return spell.suggest(word) || [];
+  }
+
+  // Spell check overlay state
+  let spellCheckOverlay = null;
+  let spellCheckDebounceTimer = null;
+  const SPELL_CHECK_DEBOUNCE = 300;
+
+  function createSpellCheckOverlay(textarea) {
+    if (spellCheckOverlay) return spellCheckOverlay;
+    
+    const container = document.createElement('div');
+    container.className = 'spell-check-overlay';
+    container.style.cssText = `
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 10;
+      font: inherit;
+      padding: inherit;
+      line-height: inherit;
+      letter-spacing: inherit;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow: hidden;
+      color: transparent;
+    `;
+    
+    const wrapper = textarea.parentElement;
+    wrapper.style.position = 'relative';
+    wrapper.insertBefore(container, textarea.nextSibling);
+    
+    spellCheckOverlay = container;
+    return container;
+  }
+
+  function updateSpellCheckOverlay(textarea, misspelledWords, lang) {
+    if (!spellCheckOverlay) createSpellCheckOverlay(textarea);
+    if (!spellCheckOverlay) return;
+
+    let html = textarea.value
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"')
+      .replace(/'/g, '&#039;')
+      .replace(/\n/g, '<br>')
+      .replace(/ /g, '&nbsp;');
+
+    // Highlight misspelled words with wavy underline
+    for (const word of misspelledWords) {
+      const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      html = html.replace(regex, '<span class="spell-error" data-word="$1" data-lang="' + lang + '">$1</span>');
+    }
+
+    spellCheckOverlay.innerHTML = html;
+  }
+
+  function clearSpellCheckOverlay() {
+    if (spellCheckOverlay) {
+      spellCheckOverlay.innerHTML = '';
+    }
+  }
+
+  async function debouncedSpellCheck(textarea) {
+    clearTimeout(spellCheckDebounceTimer);
+    spellCheckDebounceTimer = setTimeout(async () => {
+      const text = textarea.value;
+      if (!text.trim()) {
+        clearSpellCheckOverlay();
+        return;
+      }
+      const lang = detectLanguage(text);
+      await getSpellChecker(lang);
+      const misspelled = checkSpelling(text, lang);
+      updateSpellCheckOverlay(textarea, misspelled, lang);
+    }, SPELL_CHECK_DEBOUNCE);
+  }
+
+  // ============================================================
+  // REAL-TIME AUTO-TRANSLATION
+  // ============================================================
+  let autoTranslateController = null;
+  let autoTranslateDebounceTimer = null;
+  const AUTO_TRANSLATE_DEBOUNCE = 600;
+  let autoTranslateEnabled = true;
+
+  function showAutoTranslateLoading(show) {
+    const existing = document.getElementById('auto-translate-loading');
+    if (show && !existing) {
+      const indicator = document.createElement('div');
+      indicator.id = 'auto-translate-loading';
+      indicator.className = 'absolute right-3 top-3 flex items-center gap-1.5 text-xs text-mut';
+      indicator.innerHTML = `
+        <span class="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin"></span>
+        <span>Traduciendo...</span>
+      `;
+      const wrapper = translatedTextOutput.parentElement;
+      wrapper.style.position = 'relative';
+      wrapper.appendChild(indicator);
+    } else if (!show && existing) {
+      existing.remove();
+    }
+  }
+
+  async function performAutoTranslate(text, sourceLang, targetLang, requestId) {
+    if (!text.trim()) {
+      translatedTextOutput.value = '';
+      updateStats('', false);
+      return;
+    }
+
+    // Cancel previous in-flight request
+    if (autoTranslateController) {
+      autoTranslateController.abort();
+    }
+    autoTranslateController = new AbortController();
+
+    showAutoTranslateLoading(true);
+
+    try {
+      const cleanedText = cleanOrthography(text);
+      
+      // Try backend first
+      try {
+        const backendResponse = await fetch(`${BACKEND_URL}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: cleanedText,
+            source_lang: sourceLang,
+            target_lang: targetLang,
+            model_name: modelSelect.value
+          }),
+          signal: autoTranslateController.signal
+        });
+
+        if (backendResponse.ok) {
+          const backendData = await backendResponse.json();
+          if (backendData?.translated_text && requestId === currentAutoTranslateRequestId) {
+            translatedTextOutput.value = backendData.translated_text.trim();
+            updateStats(translatedTextOutput.value, false);
+            showAutoTranslateLoading(false);
+            return;
+          }
+        }
+      } catch (backendError) {
+        if (backendError.name !== 'AbortError') {
+          console.warn('Backend unavailable, using local translation fallback:', backendError);
+        }
+      }
+
+      // Local fallback translation using MyMemory
+      const parts = splitForTranslation(cleanedText);
+      const translatedParts = [];
+
+      for (let i = 0; i < parts.length; i++) {
+        if (autoTranslateController.signal.aborted) return;
+        
+        const part = parts[i];
+        const langPair = sourceLang === 'auto' ? `autodetect|${targetLang}` : `${sourceLang}|${targetLang}`;
+        const context = i < parts.length - 1 ? parts[i + 1].text : part.text;
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(part.text)}&langpair=${langPair}&context=${encodeURIComponent(context)}`;
+        
+        try {
+          const res = await fetch(url, { signal: autoTranslateController.signal });
+          const data = await res.json();
+
+          if (data && data.responseData && data.responseData.translatedText && data.responseData.translatedText !== part.text) {
+            if (i === 0 && data.responseData.detectedLanguage) {
+              const detected = data.responseData.detectedLanguage.split('-')[0].toLowerCase();
+              if (detected === targetLang) {
+                if (requestId === currentAutoTranslateRequestId) {
+                  translatedTextOutput.value = cleanedText;
+                  updateStats(cleanedText, false);
+                  showAutoTranslateLoading(false);
+                }
+                return;
+              }
+            }
+            translatedParts.push({ text: data.responseData.translatedText.trim(), sep: part.sep });
+          } else {
+            translatedParts.push({ text: part.text, sep: part.sep });
+          }
+        } catch (e) {
+          if (e.name !== 'AbortError') {
+            translatedParts.push({ text: part.text, sep: part.sep });
+          }
+        }
+      }
+
+      if (autoTranslateController.signal.aborted) return;
+
+      let translated = '';
+      translatedParts.forEach((p, i) => {
+        translated += p.text;
+        if (i < translatedParts.length - 1) translated += p.sep;
+      });
+
+      if (requestId === currentAutoTranslateRequestId) {
+        translatedTextOutput.value = translated.trim();
+        updateStats(translated.trim(), false);
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error("Auto-translation error:", e);
+        if (requestId === currentAutoTranslateRequestId) {
+          const fallbackTranslation = `[Translated to ${targetLangSelect.options[targetLangSelect.selectedIndex].text}]: ${cleanedText}`;
+          translatedTextOutput.value = fallbackTranslation;
+          updateStats(fallbackTranslation, false);
+        }
+      }
+    } finally {
+      if (requestId === currentAutoTranslateRequestId) {
+        showAutoTranslateLoading(false);
+      }
+    }
+  }
+
+  let currentAutoTranslateRequestId = 0;
+
+  function debouncedAutoTranslate(textarea) {
+    if (!autoTranslateEnabled) return;
+    
+    const text = textarea.value;
+    const detectedLang = detectLanguage(text);
+    
+    // Only auto-translate Spanish text
+    if (detectedLang !== 'es') {
+      // Clear translation if text is empty
+      if (!text.trim()) {
+        translatedTextOutput.value = '';
+        updateStats('', false);
+      }
+      return;
+    }
+
+    clearTimeout(autoTranslateDebounceTimer);
+    autoTranslateDebounceTimer = setTimeout(() => {
+      const sourceLang = sourceLangSelect.value === 'auto' ? 'es' : sourceLangSelect.value;
+      const targetLang = targetLangSelect.value;
+      currentAutoTranslateRequestId++;
+      performAutoTranslate(text, sourceLang, targetLang, currentAutoTranslateRequestId);
+    }, AUTO_TRANSLATE_DEBOUNCE);
   }
 
   // Get token count using selected encoding (sync - for input/translated stats)
@@ -976,6 +1272,12 @@ ${constraints}`;
     debounceTimer = setTimeout(() => {
       updateStats(val, true);
     }, 300);
+
+    // Real-time spell check
+    debouncedSpellCheck(e.target);
+
+    // Real-time auto-translation (Spanish only)
+    debouncedAutoTranslate(e.target);
   });
 
   translatedTextOutput.addEventListener('input', (e) => {
@@ -1012,6 +1314,78 @@ ${constraints}`;
       optimizeScopeMenu.classList.add('hidden');
     }
   });
+
+  // Spell error click handler - show suggestions
+  let activeSpellTooltip = null;
+
+  document.addEventListener('click', (event) => {
+    const spellError = event.target.closest('.spell-error');
+    if (spellError) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Remove existing tooltip
+      if (activeSpellTooltip) {
+        activeSpellTooltip.remove();
+        activeSpellTooltip = null;
+      }
+
+      const word = spellError.dataset.word;
+      const lang = spellError.dataset.lang || detectLanguage(promptInput.value);
+      const suggestions = getSuggestions(word, lang);
+
+      if (suggestions.length === 0) return;
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'spell-suggestions-tooltip';
+      tooltip.innerHTML = `
+        <ul>${suggestions.map(s => `<li data-suggestion="${s}">${s}</li>`).join('')}</ul>
+        <div class="spell-dismiss">Ignorar</div>
+      `;
+
+      // Position near the clicked word
+      const rect = spellError.getBoundingClientRect();
+      const textareaRect = promptInput.getBoundingClientRect();
+      tooltip.style.top = `${rect.bottom - textareaRect.top + 4}px`;
+      tooltip.style.left = `${rect.left - textareaRect.left}px`;
+
+      // Add click handlers for suggestions
+      tooltip.querySelectorAll('li[data-suggestion]').forEach(li => {
+        li.addEventListener('click', () => {
+          const suggestion = li.dataset.suggestion;
+          replaceWordInTextarea(promptInput, word, suggestion);
+          tooltip.remove();
+          activeSpellTooltip = null;
+          // Trigger spell check again
+          debouncedSpellCheck(promptInput);
+          // Trigger stats update
+          updateStats(promptInput.value, true);
+        });
+      });
+
+      tooltip.querySelector('.spell-dismiss').addEventListener('click', () => {
+        tooltip.remove();
+        activeSpellTooltip = null;
+      });
+
+      const wrapper = promptInput.parentElement;
+      wrapper.appendChild(tooltip);
+      activeSpellTooltip = tooltip;
+      return;
+    }
+
+    // Close tooltip if clicking elsewhere
+    if (activeSpellTooltip && !activeSpellTooltip.contains(event.target)) {
+      activeSpellTooltip.remove();
+      activeSpellTooltip = null;
+    }
+  });
+
+  function replaceWordInTextarea(textarea, oldWord, newWord) {
+    const text = textarea.value;
+    const regex = new RegExp(`\\b${oldWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    textarea.value = text.replace(regex, newWord);
+  }
 
   copyOptimizedBtn.addEventListener('click', () => {
     const val = optimizedPromptOutput.value;

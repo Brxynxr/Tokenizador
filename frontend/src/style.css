@@ -260,3 +260,146 @@ button:active {
 .icon-sun { display: none; }
 html[data-theme="dark"] .icon-moon { display: none; }
 html[data-theme="dark"] .icon-sun { display: block; }
+
+/* ---------- Spell Checker Overlay ---------- */
+.spell-check-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  font: inherit;
+  padding: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  color: transparent;
+}
+
+.spell-error {
+  position: relative;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+.spell-error::after {
+  content: attr(data-word);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 20;
+  margin-bottom: 4px;
+}
+
+.spell-error:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.spell-error::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--accent);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  margin-bottom: -4px;
+}
+
+.spell-error:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Suggestions tooltip on click */
+.spell-suggestions-tooltip {
+  position: fixed;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  min-width: 160px;
+  max-width: 280px;
+}
+
+.spell-suggestions-tooltip.hidden {
+  display: none;
+}
+
+.spell-suggestions-tooltip ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.spell-suggestions-tooltip li {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-radius: 4px;
+  transition: background 0.1s ease;
+}
+
+.spell-suggestions-tooltip li:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.spell-suggestions-tooltip .spell-dismiss {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+/* Auto-translate loading indicator */
+#auto-translate-loading {
+  animation: fade-in 0.2s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Textarea wrapper for spell checker */
+.custom-textarea-wrapper {
+  position: relative;
+}
+
+.custom-textarea-wrapper .custom-textarea {
+  position: relative;
+  z-index: 5;
+  background-color: transparent !important;
+}
+
+.custom-textarea-wrapper .spell-check-overlay {
+  z-index: 1;
+}
