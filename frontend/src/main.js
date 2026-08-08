@@ -557,10 +557,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (Math.abs(diff) < threshold) {
       optRecommendation.textContent = `La diferencia de tokens es insignificante (<10%). Puede usar el idioma original sin penalización.`;
-    } else if (diff > 0) {
-      optRecommendation.textContent = `El idioma original es más eficiente: consume ${diff} tokens menos que la traducción.`;
+    } else if (diff < 0) {
+      // inputTokens < transTokens: original usa MENOS tokens → original más eficiente
+      optRecommendation.textContent = `El idioma original es más eficiente: consume ${Math.abs(diff)} tokens menos que la traducción.`;
     } else {
-      optRecommendation.textContent = `El idioma traducido es más eficiente: consume ${Math.abs(diff)} tokens menos que el original.`;
+      // diff > 0: inputTokens > transTokens: traducción usa MENOS tokens → traducción más eficiente
+      optRecommendation.textContent = `El idioma traducido es más eficiente: consume ${diff} tokens menos que el original.`;
     }
     optRecommendation.classList.remove('hidden');
   }
