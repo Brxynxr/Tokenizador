@@ -542,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkEfficiency();
   }
 
-  // Efficiency recommendation with exact requested text (shown inside optimized panel header)
+  // Efficiency recommendation - dynamic based on actual token comparison (matches backend logic)
   function checkEfficiency() {
     const inputTokens = parseInt(statInputTokens.textContent) || 0;
     const transTokens = parseInt(statTransTokens.textContent) || 0;
@@ -552,7 +552,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    optRecommendation.textContent = "Se recomienda procesar la consulta en Inglés (Traducido) mediante DeepSeek V3. Esta combinación ofrece el balance óptimo entre latencia ultra baja, reducción drástica en el consumo de tokens y un costo operacional mínimo sin sacrificar precisión.";
+    const diff = inputTokens - transTokens;
+    const threshold = Math.max(1, Math.round(inputTokens * 0.1)); // 10% threshold
+
+    if (Math.abs(diff) < threshold) {
+      optRecommendation.textContent = `La diferencia de tokens es insignificante (<10%). Puede usar el idioma original sin penalización.`;
+    } else if (diff > 0) {
+      optRecommendation.textContent = `El idioma original es más eficiente: consume ${diff} tokens menos que la traducción.`;
+    } else {
+      optRecommendation.textContent = `El idioma traducido es más eficiente: consume ${Math.abs(diff)} tokens menos que el original.`;
+    }
     optRecommendation.classList.remove('hidden');
   }
 
