@@ -1,4 +1,4 @@
-import { getEncoding } from "js-tiktoken";
+import { Tiktoken } from "js-tiktoken/lite";
 
 const MODEL_TOKENIZER_CONFIG = {
   "gpt-4o": { encoding: "o200k_base", approx: false },
@@ -15,19 +15,47 @@ const MODEL_TOKENIZER_CONFIG = {
 
 const DEFAULT_CONFIG = { encoding: "cl100k_base", approx: true };
 
-function getTiktokenEncoding(encodingName) {
-  try {
-    return getEncoding(encodingName);
-  } catch {
-    return getEncoding("cl100k_base");
+let cl100kEncoder = null;
+let o200kEncoder = null;
+let cl100kLoading = null;
+let o200kLoading = null;
+
+async function ensureCl100kEncoder() {
+  if (cl100kEncoder) return cl100kEncoder;
+  if (!cl100kLoading) {
+    cl100kLoading = (async () => {
+      const rank = await import("js-tiktoken/ranks/cl100k_base");
+      cl100kEncoder = new Tiktoken(rank.default);
+      return cl100kEncoder;
+    })();
   }
+  return cl100kLoading;
+}
+
+async function ensureO200kEncoder() {
+  if (o200kEncoder) return o200kEncoder;
+  if (!o200kLoading) {
+    o200kLoading = (async () => {
+      const rank = await import("js-tiktoken/ranks/o200k_base");
+      o200kEncoder = new Tiktoken(rank.default);
+      return o200kEncoder;
+    })();
+  }
+  return o200kLoading;
+}
+
+async function getEncoder(name) {
+  if (name === "o200k_base") {
+    return ensureO200kEncoder();
+  }
+  return ensureCl100kEncoder();
 }
 
 export async function countTokens(text, modelId) {
   if (!text || !text.trim()) return 0;
 
   const config = MODEL_TOKENIZER_CONFIG[modelId] || DEFAULT_CONFIG;
-  const encoding = getTiktokenEncoding(config.encoding);
+  const encoding = await getEncoder(config.encoding);
   return encoding.encode(text).length;
 }
 
@@ -47,4 +75,16 @@ export function getSupportedModels() {
 export function isApproximation(modelId) {
   const config = MODEL_TOKENIZER_CONFIG[modelId] || DEFAULT_CONFIG;
   return config.approx;
+}
+
+// Count tokens using encoding name directly (for stats - input/translated text)
+export async function countTokensWithEncoding(text, encodingName) {
+  if (!text || !text.trim()) return 0;
+  try {
+    const encoding = await getEncoder(encodingName);
+    return encoding.encode(text).length;
+  } catch (e) {
+    console.error("Tokenization error:", e);
+    return Math.ceil(text.length / 4);
+  }
 }

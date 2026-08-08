@@ -1,6 +1,5 @@
 import "./style.css";
-import { getEncoding } from "js-tiktoken";
-import { countTokens, getModelTokenizerInfo, getSupportedModels, isApproximation } from "./tokenizers.js";
+import { countTokens, countTokensWithEncoding, getModelTokenizerInfo, getSupportedModels, isApproximation } from "./tokenizers.js";
 import nspell from "nspell";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:8000";
@@ -492,12 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }, AUTO_TRANSLATE_DEBOUNCE);
   }
 
-  // Get token count using selected encoding (sync - for input/translated stats)
-  function countTokensWithEncoding(text, encodingName) {
+  // Get token count using selected encoding (async - for input/translated stats)
+  async function countTokensWithEncoding(text, encodingName) {
     if (!text || !text.trim()) return 0;
     try {
-      const enc = getEncoding(encodingName);
-      return enc.encode(text).length;
+      return await countTokensWithEncoding(text, encodingName);
     } catch (e) {
       console.error("Tokenization error:", e);
       return Math.ceil(text.length / 4);
@@ -521,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     const lines = text ? text.split(/\r\n|\r|\n/).length : 0;
     const encodingName = modelSelect.value;
-    const tokens = countTokensWithEncoding(text, encodingName);
+    const tokens = await countTokensWithEncoding(text, encodingName);
     const temp = calculateTemperature(text);
 
     if (isInput) {
